@@ -21,7 +21,6 @@ include($_SERVER['DOCUMENT_ROOT'] . '/OMS/dist/include/sidebar.php');
 $search = isset($_GET['search']) ? trim($_GET['search']) : '';
 $product_id_filter = isset($_GET['product_id_filter']) ? trim($_GET['product_id_filter']) : '';
 $product_name_filter = isset($_GET['product_name_filter']) ? trim($_GET['product_name_filter']) : '';
-$product_shortname_filter = isset($_GET['product_shortname_filter']) ? trim($_GET['product_shortname_filter']) : '';
 $product_code_filter = isset($_GET['product_code_filter']) ? trim($_GET['product_code_filter']) : '';
 $description_filter = isset($_GET['description_filter']) ? trim($_GET['description_filter']) : '';
 $price_from = isset($_GET['price_from']) ? trim($_GET['price_from']) : '';
@@ -39,7 +38,7 @@ $offset = ($page - 1) * $limit;
 $countSql = "SELECT COUNT(*) as total FROM products";
 
 // Main query - Updated to include product_code
-$sql = "SELECT id, name, product_code, description, lkr_price, created_at, product_short_name, status FROM products";
+$sql = "SELECT id, name, product_code, description, lkr_price, created_at, status FROM products";
 
 // Build search conditions
 $searchConditions = [];
@@ -50,7 +49,6 @@ if (!empty($search)) {
     $searchConditions[] = "(
                         id LIKE '%$searchTerm%' OR
                         name LIKE '%$searchTerm%' OR 
-                        short_name LIKE '%$searchTerm%' OR
                         product_code LIKE '%$searchTerm%' OR 
                         description LIKE '%$searchTerm%' OR 
                         lkr_price LIKE '%$searchTerm%')";
@@ -66,12 +64,6 @@ if (!empty($product_id_filter)) {
 if (!empty($product_name_filter)) {
     $productNameTerm = $conn->real_escape_string($product_name_filter);
     $searchConditions[] = "name LIKE '%$productNameTerm%'";
-}
-
-// Specific Product Short Name filter
-if (!empty($product_shortname_filter)) {
-    $productshortNameTerm = $conn->real_escape_string($product_shortname_filter);
-    $searchConditions[] = "name LIKE '%$productshortNameTerm%'";
 }
 
 // Specific Product Code filter
@@ -178,13 +170,6 @@ $result = $conn->query($sql);
                         </div>
                         
                         <div class="form-group">
-                            <label for="product_name_filter">Product Short Name</label>
-                            <input type="text" id="product_shortname_filter" name="product_shortname_filter" 
-                                   placeholder="Enter product short name" 
-                                   value="<?php echo htmlspecialchars($product_shortname_filter); ?>">
-                        </div>
-
-                        <div class="form-group">
                             <label for="product_code_filter">Product Code</label>
                             <input type="text" id="product_code_filter" name="product_code_filter" 
                                    placeholder="Enter product code" 
@@ -262,7 +247,6 @@ $result = $conn->query($sql);
                             <tr>
                                 <th>ID</th>
                                 <th>Product Name</th>
-                                <th>Product Short Name</th>
                                 <th>Product Code</th>
                                 <th>Description</th>
                                 <th>Price (LKR)</th>
@@ -285,13 +269,6 @@ $result = $conn->query($sql);
                                             </div>
                                         </td>
                                         
-                                        <!-- Product short Name -->
-                                        <td class="product-shortname">
-                                            <div class="product-info">
-                                                <h6 style="margin: 0; font-size: 14px; font-weight: 600;"><?php echo htmlspecialchars($row['product_short_name']); ?></h6>
-                                            </div>
-                                        </td>
-
                                         <!-- Product Code -->
                                         <td>
                                             <div class="product-code" style="font-family: monospace; font-size: 13px; color: #495057; background: #f8f9fa; padding: 4px 8px; border-radius: 4px; display: inline-block;">

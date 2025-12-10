@@ -153,7 +153,7 @@ include($_SERVER['DOCUMENT_ROOT'] . '/OMS/dist/include/sidebar.php');
                                     <div class="error-feedback" id="name-error"></div>
                                 </div>
 
-                                <!--<div class="product-form-group">
+                                <div class="product-form-group">
                                     <label for="status" class="form-label">
                                         <i class="fas fa-toggle-on"></i> Status<span class="required">*</span>
                                     </label>
@@ -162,17 +162,9 @@ include($_SERVER['DOCUMENT_ROOT'] . '/OMS/dist/include/sidebar.php');
                                         <option value="inactive">Inactive</option>
                                     </select>
                                     <div class="error-feedback" id="status-error"></div>
-                                </div>-->
-                                <div class="product-form-group">
-                                    <label for="product_short_name" class="form-label">
-                                        <i class="fas fa-barcode"></i> Product Short Name<span class="required">*</span>
-                                    </label>
-                                    <input type="text" class="form-control" id="product_short_name" name="product_short_name"
-                                        placeholder="Enter product short name" required maxlength="50">
-                                    <div class="error-feedback" id="product_short_name-error"></div>
                                 </div>
                             </div>
-                            
+
                             <!-- Second Row: Price and Product Code -->
                             <div class="form-row">
                                 <div class="product-form-group">
@@ -197,19 +189,20 @@ include($_SERVER['DOCUMENT_ROOT'] . '/OMS/dist/include/sidebar.php');
                             </div>
 
                             <!-- Third Row: Description -->
-                            <div class="form-row">
-                                <div class="product-form-group full-width">
-                                    <label for="description" class="form-label">
-                                        <i class="fas fa-align-left"></i> Description<span class="required">*</span>
-                                    </label>
-                                    <textarea class="form-control" id="description" name="description" rows="4"
-                                        placeholder="Enter product description" required></textarea>
-                                    <div class="error-feedback" id="description-error"></div>
-                                    <div class="char-counter">
-                                        <span id="desc-char-count">0</span> characters
-                                    </div>
+                           <div class="form-row">
+                            <div class="product-form-group full-width">
+                                <label for="description" class="form-label">
+                                    <i class="fas fa-align-left"></i> Description <span class="required">*</span>
+                                </label>
+                                <textarea class="form-control" id="description" name="description" rows="4"
+                                    placeholder="Enter product description" required></textarea>
+                                <div class="error-feedback" id="description-error"></div>
+                                <div class="char-counter">
+                                    <span id="desc-char-count">0</span> characters
                                 </div>
                             </div>
+                        </div>
+
                         </div>
                     </div>
 
@@ -316,7 +309,7 @@ include($_SERVER['DOCUMENT_ROOT'] . '/OMS/dist/include/sidebar.php');
                         showErrorNotification(response.message || 'Failed to add product. Please try again.');
                     }
                 },
-                error: function(xhr, status, error) {  
+                error: function(xhr, status, error) {
                     hideLoading();
                     $submitBtn.prop('disabled', false).html(originalText);
                     
@@ -456,7 +449,6 @@ include($_SERVER['DOCUMENT_ROOT'] . '/OMS/dist/include/sidebar.php');
                 }
             });
             
-            
             $('#lkr_price').on('blur', function() {
                 const validation = validatePrice($(this).val());
                 if (!validation.valid) {
@@ -479,8 +471,10 @@ include($_SERVER['DOCUMENT_ROOT'] . '/OMS/dist/include/sidebar.php');
                 const validation = validateDescription($(this).val());
                 if (!validation.valid) {
                     showError('description', validation.message);
-                } else {
+                } else if ($(this).val().trim() !== '') {
                     showSuccess('description');
+                } else {
+                    clearValidation('description');
                 }
             });
         }
@@ -531,20 +525,6 @@ include($_SERVER['DOCUMENT_ROOT'] . '/OMS/dist/include/sidebar.php');
             return { valid: true, message: '' };
         }
 
-        // Validation for product_short_name
-        function validateproductshortname(product_short_name) {
-            if (product_short_name.trim() === '') {
-                return { valid: false, message: 'Product short name is required' };
-            }
-            if (product_short_name.trim().length < 2) {
-                return { valid: false, message: 'Product short name must be at least 2 characters long' };
-            }
-            if (product_short_name.length > 50) {
-                return { valid: false, message: 'Product short name is too long (maximum 255 characters)' };
-            }
-            return { valid: true, message: '' };
-        }
-
         function validatePrice(price) {
             if (price.trim() === '' || isNaN(price)) {
                 return { valid: false, message: 'Price is required and must be a valid number' };
@@ -589,22 +569,19 @@ include($_SERVER['DOCUMENT_ROOT'] . '/OMS/dist/include/sidebar.php');
             return { valid: true, message: '' };
         }
 
-        function validateDescription(description) {
-            // Description is now required
+       function validateDescription(description) {
             if (description.trim() === '') {
                 return { valid: false, message: 'Description is required' };
             }
-            
-            // Minimum length check
-            if (description.trim().length < 10) {
-                return { valid: false, message: 'Description must be at least 10 characters long' };
+
+            if (description.length < 5) {
+                return { valid: false, message: 'Description must be at least 5 characters long' };
             }
-            
-            // Check length
+
             if (description.length > 65535) {
                 return { valid: false, message: 'Description is too long (maximum 65,535 characters)' };
             }
-            
+
             return { valid: true, message: '' };
         }
 
@@ -645,7 +622,6 @@ include($_SERVER['DOCUMENT_ROOT'] . '/OMS/dist/include/sidebar.php');
             
             // Get all field values
             const name = $('#name').val();
-            const productshortname = $('#product_short_name').val();
             const price = $('#lkr_price').val();
             const productCode = $('#product_code').val();
             const description = $('#description').val();
@@ -653,7 +629,6 @@ include($_SERVER['DOCUMENT_ROOT'] . '/OMS/dist/include/sidebar.php');
             // Validate required fields
             const validations = [
                 { field: 'name', validator: validateName, value: name },
-                { field: 'product_short_name', validator: validateproductshortname, value: productshortname },
                 { field: 'lkr_price', validator: validatePrice, value: price },
                 { field: 'product_code', validator: validateProductCode, value: productCode },
                 { field: 'description', validator: validateDescription, value: description }
@@ -664,7 +639,9 @@ include($_SERVER['DOCUMENT_ROOT'] . '/OMS/dist/include/sidebar.php');
                 if (!result.valid) {
                     showError(validation.field, result.message);
                     isValid = false;
-                } else {
+                } else if (validation.field === 'description' && validation.value.trim() !== '') {
+                    showSuccess(validation.field);
+                } else if (validation.field !== 'description') {
                     showSuccess(validation.field);
                 }
             });
