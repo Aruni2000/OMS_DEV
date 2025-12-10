@@ -30,22 +30,18 @@ function generateCSRFToken() {
 }
 
 // Fetch available cities dynamically from city_table
-if (isset($_GET['query'])) {
-    $query = $conn->real_escape_string($_GET['query']);
-    $sql = "SELECT city_id, city_name FROM city_table 
-            WHERE is_active = 1 AND city_name LIKE '%$query%' 
-            ORDER BY city_name ASC LIMIT 10";
-    $result = $conn->query($sql);
+$cities = [];
+$cityQuery = "SELECT city_id, city_name FROM city_table WHERE is_active = 1 ORDER BY city_name ASC";
+$cityResult = $conn->query($cityQuery);
 
-    $cities = [];
-    if ($result && $result->num_rows > 0) {
-        while ($row = $result->fetch_assoc()) {
-            $cities[] = $row;
-        }
+// Collect cities into an array
+if ($cityResult && $cityResult->num_rows > 0) {
+    while ($cityRow = $cityResult->fetch_assoc()) {
+        $cities[] = $cityRow;
     }
-
-    header('Content-Type: application/json');
-    echo json_encode($cities);
+} else {
+    // Log error or handle the case where no cities are found
+    error_log("No cities found in city_table or query failed: " . $conn->error);
 }
 
 include($_SERVER['DOCUMENT_ROOT'] . '/OMS/dist/include/navbar.php');
@@ -145,33 +141,6 @@ include($_SERVER['DOCUMENT_ROOT'] . '/OMS/dist/include/sidebar.php');
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-
-        .suggestions-list {
-    position: absolute;
-    background: #fff;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    max-height: 200px;
-    overflow-y: auto;
-    width: 100%;
-    z-index: 1000;
-    display: none;
-}
-
-.suggestion-item {
-    padding: 8px 12px;
-    cursor: pointer;
-}
-
-.suggestion-item:hover {
-    background-color: #f1f1f1;
-}
-
-.suggestion-item.disabled {
-    color: #999;
-    cursor: default;
-}
-
     </style>
 </head>
 
@@ -287,16 +256,31 @@ include($_SERVER['DOCUMENT_ROOT'] . '/OMS/dist/include/sidebar.php');
                             </div>
 
                             <!-- Second Row: City -->
-                           <div class="customer-form-group" style="position: relative;">
-    <label for="city_input" class="form-label">
-        <i class="fas fa-city"></i> City<span class="required">*</span>
-    </label>
-    <input type="text" class="form-control" id="city_input" placeholder="Type city name" autocomplete="off" required>
-    <input type="hidden" id="city_id" name="city_id">
-    <div id="city-suggestions" class="suggestions-list"></div>
-    <div class="error-feedback" id="city_id-error"></div>
-</div>
-
+                            <div class="form-row">
+                                <div class="customer-form-group">
+                                    <label for="city_id" class="form-label">
+                                        <i class="fas fa-city"></i> City<span class="required">*</span>
+                                    </label>
+                                    <select class="form-select" id="city_id" name="city_id" required>
+                                        <option value="">Select City</option>
+                                        <?php if (!empty($cities)): ?>
+                                            <?php foreach ($cities as $city): ?>
+                                                <option value="<?= htmlspecialchars($city['city_id']) ?>">
+                                                    <?= htmlspecialchars($city['city_name']) ?>
+                                                </option>
+                                            <?php endforeach; ?>
+                                        <?php else: ?>
+                                            <option value="" disabled>No cities available</option>
+                                        <?php endif; ?>
+                                    </select>
+                                    <div class="error-feedback" id="city_id-error"></div>
+                                    <?php if (empty($cities)): ?>
+                                        <div class="no-cities-message">No cities found. Please contact administrator.</div>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
                     <!-- Submit Buttons -->
                     <div class="submit-container">
@@ -820,52 +804,6 @@ include($_SERVER['DOCUMENT_ROOT'] . '/OMS/dist/include/sidebar.php');
                 hideSuccessModal();
             }
         });
-
-        $(document).ready(function() {
-    $('#city_input').on('input', function() {
-        const query = $(this).val().trim();
-        if (query.length < 1) {
-            $('#city-suggestions').hide();
-            $('#city_id').val('');
-            return;
-        }
-
-        $.ajax({
-            url: 'fetch_cities.php',
-            type: 'GET',
-            data: { query: query },
-            dataType: 'json',
-            success: function(data) {
-                let html = '';
-                if (data.length > 0) {
-                    data.forEach(city => {
-                        html += `<div class="suggestion-item" data-id="${city.city_id}" data-name="${city.city_name}">${city.city_name}</div>`;
-                    });
-                } else {
-                    html = '<div class="suggestion-item disabled">No cities found</div>';
-                }
-                $('#city-suggestions').html(html).show();
-            }
-        });
-    });
-
-    $(document).on('click', '.suggestion-item', function() {
-        if (!$(this).hasClass('disabled')) {
-            const name = $(this).data('name');
-            const id = $(this).data('id');
-            $('#city_input').val(name);
-            $('#city_id').val(id);
-            $('#city-suggestions').hide();
-        }
-    });
-
-    $(document).click(function(e) {
-        if (!$(e.target).closest('#city_input, #city-suggestions').length) {
-            $('#city-suggestions').hide();
-        }
-    });
-});
-
     </script>
 </body>
 </html>
