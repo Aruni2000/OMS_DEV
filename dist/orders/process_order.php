@@ -147,40 +147,89 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         
         // Find or create customer
         $customer_id = 0;
-        $checkCustomerSql = "SELECT customer_id, city_id FROM customers WHERE name = ? AND email = ?";
-        $stmt = $conn->prepare($checkCustomerSql);
-        $stmt->bind_param("ss", $customer_name, $customer_email);
-        $stmt->execute();
-        $result = $stmt->get_result();
         
-        if ($result->num_rows > 0) {
-            $customer = $result->fetch_assoc();
-            $customer_id = $customer['customer_id'];
+        // Check if an existing customer ID was provided
+        $provided_customer_id = !empty($_POST['customer_id']) ? intval($_POST['customer_id']) : 0;
+        
+        if ($provided_customer_id > 0) {
+            // Validate the provided customer ID exists
+            $checkIdSql = "SELECT customer_id, city_id FROM customers WHERE customer_id = ?";
+            $idStmt = $conn->prepare($checkIdSql);
+            $idStmt->bind_param("i", $provided_customer_id);
+            $idStmt->execute();
+            $idResult = $idStmt->get_result();
             
-            // If city_id is not provided in POST but exists in customer record, use existing
-            if (empty($city_id) && !empty($customer['city_id'])) {
-                $city_id = $customer['city_id'];
+            if ($idResult->num_rows > 0) {
+                $customer = $idResult->fetch_assoc();
+                $customer_id = $customer['customer_id'];
+                
+                // If city_id is not provided in POST but exists in customer record, use existing
+                if (empty($city_id) && !empty($customer['city_id'])) {
+                    $city_id = $customer['city_id'];
+                }
+                
+                // Update existing customer information
+                $updateCustomerSql = "UPDATE customers SET 
+                                     phone = ?, 
+                                     address_line1 = ?, 
+                                     address_line2 = ?, 
+                                     city_id = ?, 
+                                     status = 'Active' 
+                                     WHERE customer_id = ?";
+                $stmt = $conn->prepare($updateCustomerSql);
+                $stmt->bind_param("sssii", $customer_phone, $address_line1, $address_line2, $city_id, $customer_id);
+                $stmt->execute();
+            }
+        }
+        
+        // If no valid customer ID found, try lookup by Name and Email (if email provided)
+        if ($customer_id === 0) {
+            if (!empty($customer_email)) {
+                $checkCustomerSql = "SELECT customer_id, city_id FROM customers WHERE name = ? AND email = ?";
+                $stmt = $conn->prepare($checkCustomerSql);
+                $stmt->bind_param("ss", $customer_name, $customer_email);
+            } else {
+                // If no email, check by Name and Phone (since email is optional/null)
+                $checkCustomerSql = "SELECT customer_id, city_id FROM customers WHERE name = ? AND phone = ?";
+                $stmt = $conn->prepare($checkCustomerSql);
+                $stmt->bind_param("ss", $customer_name, $customer_phone);
             }
             
-            // Update existing customer information
-            $updateCustomerSql = "UPDATE customers SET 
-                                 phone = ?, 
-                                 address_line1 = ?, 
-                                 address_line2 = ?, 
-                                 city_id = ?, 
-                                 status = 'Active' 
-                                 WHERE customer_id = ?";
-            $stmt = $conn->prepare($updateCustomerSql);
-            $stmt->bind_param("sssii", $customer_phone, $address_line1, $address_line2, $city_id, $customer_id);
             $stmt->execute();
-        } else {
-            // Insert new customer with correct column names
-            $insertCustomerSql = "INSERT INTO customers (name, email, phone, address_line1, address_line2, city_id, status) 
-                                 VALUES (?, ?, ?, ?, ?, ?, 'Active')";
-            $stmt = $conn->prepare($insertCustomerSql);
-            $stmt->bind_param("sssssi", $customer_name, $customer_email, $customer_phone, $address_line1, $address_line2, $city_id);
-            $stmt->execute();
-            $customer_id = $conn->insert_id;
+            $result = $stmt->get_result();
+            
+            if ($result->num_rows > 0) {
+                $customer = $result->fetch_assoc();
+                $customer_id = $customer['customer_id'];
+                
+                // If city_id is not provided in POST but exists in customer record, use existing
+                if (empty($city_id) && !empty($customer['city_id'])) {
+                    $city_id = $customer['city_id'];
+                }
+                
+                // Update existing customer
+                $updateCustomerSql = "UPDATE customers SET 
+                                     phone = ?, 
+                                     address_line1 = ?, 
+                                     address_line2 = ?, 
+                                     city_id = ?, 
+                                     status = 'Active' 
+                                     WHERE customer_id = ?";
+                $stmt = $conn->prepare($updateCustomerSql);
+                $stmt->bind_param("sssii", $customer_phone, $address_line1, $address_line2, $city_id, $customer_id);
+                $stmt->execute();
+            } else {
+                // Create new customer
+                // Convert empty email to NULL to prevent unique constraint violation
+                $db_email = empty($customer_email) ? null : $customer_email;
+                
+                $insertCustomerSql = "INSERT INTO customers (name, email, phone, address_line1, address_line2, city_id, status, created_at, updated_at) 
+                                     VALUES (?, ?, ?, ?, ?, ?, 'Active', NOW(), NOW())";
+                $stmt = $conn->prepare($insertCustomerSql);
+                $stmt->bind_param("sssssi", $customer_name, $db_email, $customer_phone, $address_line1, $address_line2, $city_id);
+                $stmt->execute();
+                $customer_id = $conn->insert_id;
+            }
         }
 
         // ADDITIONAL CHECK: If city_id is still null, try to get it from the customer record again

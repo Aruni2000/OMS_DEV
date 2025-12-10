@@ -109,11 +109,12 @@ try {
     $errors = [];
 
     // Basic required field checks
+
     if (empty($name)) {
         $errors['name'] = 'Customer name is required';
     }
-    if (empty($email)) {
-        $errors['email'] = 'Email address is required';
+    if ($email === '') {
+        $email = null;
     }
     if (empty($phone)) {
         $errors['phone'] = 'Phone number is required';

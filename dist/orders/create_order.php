@@ -337,7 +337,7 @@ include($_SERVER['DOCUMENT_ROOT'] . '/OMS/dist/include/sidebar.php');
                                     <input type="text" class="form-control" name="customer_name" id="customer_name" required placeholder="Enter Full Name">
                                 </div>
                                 <div class="form-group">
-                                    <label class="form-label">Email</label>
+                                    <label class="form-label">Email <span style="font-size: 0.8em; color: #6c757d; font-weight: normal;">(Optional)</span></label>
                                     <input type="email" class="form-control" name="customer_email" id="customer_email" placeholder="example@email.com">
                                 </div>
                                 <div class="form-group">
@@ -706,16 +706,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             // Email validation (required for new customers)
-            if (customerEmail === '') {
-                const errorDiv = document.createElement('div');
-                errorDiv.className = 'validation-error';
-                errorDiv.style.color = '#dc3545';
-                errorDiv.style.fontSize = '0.875rem';
-                errorDiv.style.marginTop = '0.25rem';
-                errorDiv.textContent = 'Email is required';
-                document.getElementById('customer_email').parentNode.appendChild(errorDiv);
-                isValid = false;
-            } else if (!isValidEmail(customerEmail)) {
+            if (customerEmail !== '' && !isValidEmail(customerEmail)) {
                 const errorDiv = document.createElement('div');
                 errorDiv.className = 'validation-error';
                 errorDiv.style.color = '#dc3545';
@@ -1384,16 +1375,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // For new customers, all fields are required
         if (!isExistingCustomer) {
-            if (customerEmail === '') {
-                const errorDiv = document.createElement('div');
-                errorDiv.className = 'validation-error';
-                errorDiv.style.color = '#dc3545';
-                errorDiv.style.fontSize = '0.875rem';
-                errorDiv.style.marginTop = '0.25rem';
-                errorDiv.textContent = 'Email is required';
-                document.getElementById('customer_email').parentNode.appendChild(errorDiv);
-                isValid = false;
-            } else if (!isValidEmail(customerEmail)) {
+            if (customerEmail !== '' && !isValidEmail(customerEmail)) {
                 const errorDiv = document.createElement('div');
                 errorDiv.className = 'validation-error';
                 errorDiv.style.color = '#dc3545';

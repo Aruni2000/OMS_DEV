@@ -139,12 +139,15 @@ try {
     $errors = [];
 
     // Basic required field checks
+    // Verify other required fields
     if (empty($name)) {
         $errors['name'] = 'Customer name is required';
     }
-    if (empty($email)) {
-        $errors['email'] = 'Email address is required';
-    }
+    // Email is optional 
+    // if (empty($email)) {
+    //     $errors['email'] = 'Email address is required';
+    // }
+    
     if (empty($phone)) {
         $errors['phone'] = 'Phone number is required';
     }
@@ -266,7 +269,10 @@ try {
         WHERE customer_id = ?
     ");
 
-    $updateStmt->bind_param("ssssssii", $name, $email, $phone, $status, $address_line1, $address_line2, $city_id, $customer_id);
+    // Convert empty email to NULL 
+    $db_email = empty($email) ? null : $email;
+
+    $updateStmt->bind_param("ssssssii", $name, $db_email, $phone, $status, $address_line1, $address_line2, $city_id, $customer_id);
 
     if ($updateStmt->execute()) {
         // Check if any rows were affected

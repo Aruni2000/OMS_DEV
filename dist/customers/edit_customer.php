@@ -247,7 +247,7 @@ include($_SERVER['DOCUMENT_ROOT'] . '/OMS/dist/include/sidebar.php');
 
                                 <div class="customer-form-group">
                                     <label for="email" class="form-label">
-                                        <i class="fas fa-envelope"></i> Email Address<span class="required">*</span>
+                                        <i class="fas fa-envelope"></i> Email Address <span class="text-muted small fw-normal">(Optional)</span>
                                     </label>
                                     <input type="email" class="form-control" id="email" name="email"
                                         placeholder="customer@example.com" 
@@ -677,7 +677,7 @@ include($_SERVER['DOCUMENT_ROOT'] . '/OMS/dist/include/sidebar.php');
 
         function validateEmail(email) {
             if (email.trim() === '') {
-                return { valid: false, message: 'Email address is required' };
+                return { valid: true, message: '' };
             }
             if (email.length > 100) {
                 return { valid: false, message: 'Email address is too long (maximum 100 characters)' };
