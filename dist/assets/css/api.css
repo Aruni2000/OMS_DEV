@@ -1,0 +1,394 @@
+  .courier-hint, .client-hint, .api-hint, .status-hint {
+            font-size: 12px;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+
+        .settings-display {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 11px;
+            margin-top: -18px;
+        }
+
+        .setting-row {
+            display: flex;
+            margin-bottom: 15px;
+        }
+
+        .setting-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .setting-item {
+            flex: 1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 15px;
+            background-color: #ffffff;
+            border-radius: 5px;
+            margin-right: 15px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .setting-item:last-child {
+            margin-right: 0;
+        }
+
+        .setting-item label {
+            font-weight: 600;
+            color: #333;
+            margin: 0;
+        }
+
+        .setting-item span {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-active {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .status-inactive {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        .text-success {
+            color: #28a745 !important;
+        }
+
+        .text-muted {
+            color: #6c757d !important;
+        }
+
+        .section-header {
+            margin-bottom: 8px;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .section-header h6 {
+            color: #495057;
+            font-weight: 600;
+            margin: 10px;
+            font-size: 16px;
+        }
+
+        @media (max-width: 768px) {
+            .setting-row {
+                flex-direction: column;
+            }
+            
+            .setting-item {
+                margin-right: 0;
+                margin-bottom: 10px;
+            }
+            
+            .setting-item:last-child {
+                margin-bottom: 0;
+            }
+        }
+
+
+
+        /* Couriers.php code dropdwon style */
+
+          /* Fix table overflow issues */
+        .table-wrapper {
+            overflow: visible !important;
+        }
+        
+        .orders-table {
+            position: relative;
+            overflow: visible !important;
+        }
+        
+        .orders-table tbody tr {
+            position: relative;
+            overflow: visible !important;
+        }
+        
+        .orders-table tbody tr td {
+            position: relative;
+            overflow: visible !important;
+        }
+        
+        /* Dropdown Styles */
+        .actions-dropdown {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .dropdown-btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            min-width: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 5px;
+        }
+        
+        .dropdown-btn:hover {
+            background: #0056b3;
+        }
+        
+        .dropdown-menu {
+            /* position: absolute; */
+            top: 100%;
+            right: 0;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            display: none;
+            min-width: 150px;
+            z-index: 9999 !important;
+            margin-top: 2px;
+        }
+        
+        .dropdown-menu.show {
+            display: block;
+        }
+        
+        .dropdown-item {
+            padding: 10px 12px;
+            cursor: pointer;
+            border: none;
+            background: none;
+            width: 100%;
+            text-align: left;
+            font-size: 12px;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: background-color 0.2s ease;
+        }
+        
+        .dropdown-item:hover {
+            background: #f8f9fa;
+        }
+        
+        .dropdown-item.set-default {
+            color: #28a745;
+        }
+        
+        .dropdown-item.set-default:hover {
+            background: #f8fff8;
+        }
+        
+        .dropdown-item.remove-default {
+            color: #dc3545;
+        }
+        
+        .dropdown-item.remove-default:hover {
+            background: #fdf2f2;
+        }
+        
+        .dropdown-item.new-parcel {
+            color: #007bff;
+        }
+        
+        .dropdown-item.new-parcel:hover {
+            background: #f0f8ff;
+        }
+        
+        .dropdown-item:not(:last-child) {
+            border-bottom: 1px solid #eee;
+        }
+        
+        /* Default badge styles */
+        .default-badge {
+            background: #28a745;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 10px;
+            font-weight: 500;
+            margin-left: 8px;
+        }
+        
+        .default-courier-row {
+            background-color: #f8fff8;
+            border-left: 3px solid #28a745;
+        }
+        
+        .default-status-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .default-yes {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .default-no {
+            background: #f8f9fa;
+            color: #6c757d;
+        }
+        
+        /* Ensure actions column has proper positioning */
+        .actions {
+            position: relative;
+            overflow: visible !important;
+        }
+
+
+         /* Couriers.php code api modal */
+
+          .api-parcel-modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+        
+        .api-parcel-modal-content {
+            background-color: #fefefe;
+            margin: 10% auto;
+            padding: 0;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .api-parcel-modal-header {
+            padding: 20px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .api-parcel-modal-title {
+            margin: 0;
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .api-parcel-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #999;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .api-parcel-close:hover {
+            color: #333;
+        }
+        
+        .api-parcel-modal-body {
+            padding: 20px;
+        }
+        
+        .api-parcel-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            border-left: 4px solid #007bff;
+        }
+        
+        .api-parcel-info-icon {
+            color: #007bff;
+            font-size: 1.2rem;
+            margin-right: 10px;
+        }
+        
+        .api-parcel-info-text {
+            margin: 0;
+            color: #555;
+            line-height: 1.5;
+        }
+        
+        .api-parcel-modal-footer {
+            padding: 20px;
+            border-top: 1px solid #eee;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+        
+        .api-parcel-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .api-parcel-btn-cancel {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .api-parcel-btn-cancel:hover {
+            background: #5a6268;
+        }
+        
+        .api-parcel-btn-confirm {
+            background: #007bff;
+            color: white;
+        }
+        
+        .api-parcel-btn-confirm:hover {
+            background: #0056b3;
+        }
+
+        /* Badge Styles for API ADD */
+        .default-status-badge.api-add {
+            background: linear-gradient(135deg, #17a2b8, #138496);
+            color: white;
+            font-weight: 600;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            border: 1px solid #117a8b;
+            box-shadow: 0 2px 4px rgba(23, 162, 184, 0.2);
+        }
+        
+        .default-status-badge.api-add i {
+            color: #ffffff;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+        
+        .api-courier-row {
+            background-color: #f0f9ff;
+            border-left: 4px solid #17a2b8;
+        }

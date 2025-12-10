@@ -1,0 +1,81 @@
+  /* .alert-container {
+            margin-bottom: 20px;
+            
+        } */
+        
+        .alert {
+             width: fit-content;
+    padding: 5px 8px;
+    margin-bottom: 8px;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+        
+        .alert-success {
+            color: #155724;
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+        }
+        
+        .alert-error, .alert-danger {
+            color: #721c24;
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+        }
+        
+        .alert-warning {
+            color: #856404;
+            background-color: #fff3cd;
+            border-color: #ffeaa7;
+        }
+        
+        .alert-info {
+            color: #0c5460;
+            background-color: #d1ecf1;
+            border-color: #bee5eb;
+        }
+        
+        .alert-icon {
+            margin-right: 10px;
+            font-size: 16px;
+        }
+        
+        .alert-close {
+            background: none;
+            border: none;
+            font-size: 18px;
+            cursor: pointer;
+            padding: 0;
+            margin-left: 10px;
+        }
+        
+        .courier-status-card {
+           background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+           padding: 3px 8px;
+           margin-bottom: -11px;
+           box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+           width: fit-content;
+           height: 50px;
+           display: flex;
+           align-items: center;
+           /* text-align: center; */
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .status-active { background-color: #28a745; }
+        .status-warning { background-color: #ffc107; }
+        .status-error { background-color: #dc3545; }
+        .status-api { background-color: #17a2b8; }

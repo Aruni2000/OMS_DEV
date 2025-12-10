@@ -1,0 +1,108 @@
+ .print-buttons {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+            justify-content: center;
+        }
+        
+        .print-btn {
+            background-color: #1565C0;
+            border-color: #1565C0;
+            font-weight: 500;
+            border-radius: 8px;
+            font-size: 14px;
+            color: white;
+            border: none;
+            padding: 9px 24px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .print-btn:hover {
+            background-color: #0d47a1;
+            border-color: #0d47a1;
+        }
+        
+        .print-btn:active {
+            transform: translateY(0);
+        }
+        
+        .print-btn i {
+            margin-right: 8px;
+        }
+        
+        .filters-container {
+            background: white; 
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .filter-row {
+            display: flex;
+            gap: 15px;
+            align-items: end;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+        
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            min-width: 150px;
+        }
+        
+        .filter-group label {
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #333;
+        }
+        
+        .filter-group input,
+        .filter-group select {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .results-info {
+            background: #f8f9fa;
+            padding: 10px 15px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            font-size: 14px;
+            color: #555;
+        }
+
+        .filter-actions {
+            display: flex;
+            gap: 10px;
+            align-items: end;
+        }
+
+        .clear-btn {
+            background-color: #6c757d;
+            border-color: #6c757d;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            height: 36px;
+        }
+
+        .clear-btn:hover {
+            background-color: #5a6268;
+            border-color: #545b62;
+        }
+
+        .clear-btn i {
+            margin-right: 5px;
+        }

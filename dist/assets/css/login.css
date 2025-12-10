@@ -1,0 +1,110 @@
+/* Blue Background Style for Login Page - Similar to Signup */
+body {
+    background: linear-gradient(135deg, #0d1117 0%, #21262d 100%) !important;
+    min-height: 100vh;
+}
+
+/* Enhanced auth wrapper background */
+.auth-wrapper {
+    background: linear-gradient(135deg, #0d1117 0%, #21262d 100%);
+    position: relative;
+    overflow: hidden;
+}
+
+.auth-wrapper::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: 
+        linear-gradient(0deg, 
+            rgba(168, 85, 247, 0.4) 0%,
+            rgba(59, 130, 246, 0.3) 30%,
+            rgba(245, 158, 11, 0.2) 60%,
+            transparent 100%
+        ),
+        radial-gradient(circle at 20% 80%, rgba(168, 85, 247, 0.5) 0%, transparent 40%),
+        radial-gradient(circle at 80% 60%, rgba(59, 130, 246, 0.4) 0%, transparent 35%),
+        radial-gradient(circle at 60% 90%, rgba(59, 140, 11, 0.3) 0%, transparent 30%);
+    opacity: 0.6;
+    z-index: 0;
+}
+
+/* Ensure form content is above the background overlay */
+.auth-form {
+    position: relative;
+    z-index: 1;
+}
+
+/* Enhanced floating animations for background elements */
+.auth-bg span {
+    z-index: 0;
+}
+
+.auth-bg span:nth-child(1) {
+    background: linear-gradient(135deg, rgba(168, 85, 247, 0.6), rgba(59, 130, 246, 0.4)) !important;
+}
+
+.auth-bg span:nth-child(2) {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.8), rgba(16, 185, 129, 0.6)) !important;
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
+}
+
+.auth-bg span:nth-child(3) {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.7), rgba(239, 68, 68, 0.5)) !important;
+    box-shadow: 0 0 15px rgba(245, 158, 11, 0.4);
+}
+
+.auth-bg span:nth-child(4) {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.6), rgba(168, 85, 247, 0.4)) !important;
+}
+
+/* Enhanced card styling to match signup */
+.card {
+    background: rgba(255, 255, 255, 0.95) !important;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 16px 32px rgba(0, 0, 0, 0.4) !important;
+    border-radius: 12px !important;
+    overflow: hidden;
+}
+
+/* Add border radius to card-body */
+.card-body {
+    border-radius: 12px !important;
+    background: rgba(255, 255, 255, 0.95) !important;
+}
+
+/* Enhanced button styling */
+.btn-primary {
+    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important;
+    border: none !important;
+    transition: all 0.3s ease !important;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%) !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4) !important;
+}
+
+/* Enhanced form input styling */
+.form-control:focus {
+    border-color: #3b82f6 !important;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+}
+
+/* Error message styling to match signup */
+.error-message {
+    background-color: #fef2f2 !important;
+    border: 1px solid #fecaca !important;
+    color: #dc2626 !important;
+    border-radius: 8px !important;
+}
+
+/* Enhanced password toggle */
+.password-toggle:hover {
+    color: #3b82f6 !important;
+}

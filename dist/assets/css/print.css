@@ -1,0 +1,529 @@
+/* Base Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    font-size: 12px;
+    line-height: 1.4;
+    color: #000;
+    background: #fff;
+    padding: 15px;
+    max-width: 210mm;
+    margin: 0 auto;
+}
+
+/* Receipt Container */
+.receipt-container {
+    width: 100%;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+/* Main Table Styles */
+.main-table {
+    width: 100%;
+    border-collapse: collapse;
+    border: 2px solid #000;
+    font-size: 12px;
+}
+
+.main-table td {
+    border: 1px solid #000;
+    padding: 12px;
+    vertical-align: top;
+}
+
+/* Header Sections */
+.header-section {
+    background-color: #f8f8f8;
+    /* font-weight: bold; */
+    text-align: center;
+    padding: 10px;
+}
+
+.company-name {
+    /* font-weight: bold; */
+    font-size: 14px;
+    margin-bottom: 5px;
+}
+
+.company-info {
+    font-size: 10px;
+    margin-bottom: 2px;
+}
+
+.company-logo img {
+    max-height: 19px;
+    width: auto;
+}
+
+/* Order and Service Information */
+.order-id-cell {
+    font-weight: bold;
+    font-size: 13px;
+    text-align: center;
+    background-color: #f0f0f0;
+    width: 195px;
+    vertical-align: top;
+    padding: 10px;
+    border: 1px solid #ddd;
+}
+
+.delivery-service-cell {
+    font-weight: bold;
+    background-color: #f8f8f8;
+}
+
+.tracking-cell {
+    font-size: 11px;
+    background-color: #f8f8f8;
+    text-align: center;
+}
+
+.service-info-header {
+    background-color: #f0f0f0;
+    font-weight: bold;
+    padding: 8px;
+    border: 1px solid #ddd;
+}
+
+.service-info-cell {
+    padding: 5px;
+    border: 1px solid #ddd;
+}
+
+/* Product and Customer Headers */
+.product-header {
+    font-weight: bold;
+    background-color: #e0e0e0;
+}
+
+.customer-header {
+    font-weight: bold;
+    background-color: #e0e0e0;
+}
+
+.customer-info {
+    font-size: 11px;
+    line-height: 1.5;
+}
+
+/* Totals Section */
+.totals-header {
+    font-weight: bold;
+}
+
+.totals-cell {
+    font-size: 11px;
+    line-height: 1.6;
+}
+
+.total-payable {
+    font-weight: bold;
+    font-size: 13px;
+    text-align: center;
+    background-color: #f0f0f0;
+}
+
+.amount {
+    text-align: right;
+    font-weight: bold;
+}
+
+/* Barcode Section */
+.barcode-section {
+    text-align: center;
+    margin: 10px 0;
+    margin-bottom: 5px;
+}
+
+.barcode-image {
+    max-width: 150px;
+    max-width: 147px;
+    max-height: 59px;
+    height: auto;
+    width: auto;
+    margin: 5px 0;
+    display: block;
+    margin: 0 auto;
+}
+
+.barcode-text {
+    font-size: 10px;
+    font-size: 8px;
+    font-family: monospace;
+    margin-top: 5px;
+    margin-top: 2px;
+    color: #666;
+    text-align: center;
+}
+
+.tracking-text {
+    font-size: 12px;
+    font-weight: bold;
+    margin-top: 5px;
+}
+
+/* QR Code Section */
+.qr-section {
+    text-align: center;
+    margin-top: 10px;
+    padding: 5px;
+}
+
+.qr-image {
+    max-width: 80px;
+    max-height: 80px;
+    width: auto;
+    height: auto;
+    border: 1px solid #ddd;
+    display: block;
+    margin: 0 auto;
+}
+
+.qr-text {
+    font-size: 8px;
+    color: #666;
+    margin-top: 3px;
+    text-align: center;
+}
+
+/* Label Print Page Specific Styles */
+.print-buttons {
+    display: flex;
+    gap: 10px;
+    margin: 20px 0;
+    justify-content: center;
+}
+
+.print-btn {
+    background-color: #1565C0;
+    border-color: #1565C0;
+    font-weight: 500;
+    border-radius: 8px;
+    font-size: 14px;
+    color: white;
+    border: none;
+    padding: 9px 24px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.print-btn:hover {
+    background-color: #0d47a1;
+    border-color: #0d47a1;
+}
+
+.print-btn:active {
+    transform: translateY(0);
+}
+
+.print-btn i {
+    margin-right: 8px;
+}
+
+/* Filters Container */
+.filters-container {
+    background: white; 
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+}
+
+.filter-row {
+    display: flex;
+    gap: 15px;
+    align-items: end;
+    flex-wrap: wrap;
+    margin-bottom: 15px;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    min-width: 150px;
+}
+
+.filter-group label {
+    font-weight: 600;
+    margin-bottom: 5px;
+    color: #333;
+}
+
+.filter-group input,
+.filter-group select {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.results-info {
+    background: #f8f9fa;
+    padding: 10px 15px;
+    border-radius: 4px;
+    margin-bottom: 15px;
+    font-size: 14px;
+    color: #555;
+}
+
+.filter-actions {
+    display: flex;
+    gap: 10px;
+    align-items: end;
+}
+
+.clear-btn {
+    background-color: #6c757d;
+    border-color: #6c757d;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    height: 36px;
+}
+
+.clear-btn:hover {
+    background-color: #5a6268;
+    border-color: #545b62;
+}
+
+.clear-btn i {
+    margin-right: 5px;
+}
+
+/* Print Media Queries */
+@media print {
+    body {
+        padding: 0;
+        margin: 0;
+        font-size: 11px;
+    }
+    
+    .receipt-container {
+        max-width: none;
+        width: 100%;
+    }
+    
+    .main-table {
+        page-break-inside: avoid;
+    }
+    
+    .barcode-section {
+        margin: 5px 0;
+    }
+    
+    .qr-section, .barcode-section {
+        page-break-inside: avoid;
+    }
+    
+    .qr-image, .barcode-image {
+        print-color-adjust: exact;
+        -webkit-print-color-adjust: exact;
+    }
+    
+    @page {
+        size: A4;
+        margin: 1cm;
+    }
+}
+
+
+   /* Override external CSS for bulk print layout */
+        body {
+            padding: 0;
+            margin: 0;
+            max-width: none;
+        }
+        
+        /* Bulk print specific styles */
+        .labels-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: flex-start;
+            gap: 3mm;
+            padding: 3mm;
+        }
+        
+        .label-wrapper {
+            width: 10cm;
+            height: 13.9cm;
+            break-inside: avoid;
+            page-break-inside: avoid;
+            margin: 0;
+            display: inline-block;
+            vertical-align: top;
+        }
+        
+        .receipt-container {
+            width: 10cm;
+            height: 13.9cm;
+            max-width: 10cm;
+            margin: 0;
+            /* border: 2px solid #000; */
+            background: white;
+            position: relative;
+        }
+        
+        .main-table {
+            width: 100%;
+            height: 100%;
+            font-size: 11px;
+        }
+        
+        .main-table td {
+            padding: 2mm;
+            font-size: 11px;
+        }
+        
+        .header-section {
+            padding: 2mm;
+        }
+        
+        .company-name {
+            font-size: 11px;
+            margin-bottom: 1mm;
+        }
+        
+        .company-info {
+            font-size: 10px;
+            margin-bottom: 1mm;
+        }
+        
+        .order-id-cell {
+            width: 40%;
+            padding: 2mm;
+            font-size: 10px;
+        }
+        
+        .barcode-image {
+            max-width: 280px;
+            max-height: 20mm;
+            height: auto;
+        }
+        
+        .qr-image {
+            max-width: 15mm;
+            max-height: 15mm;
+        }
+        
+        .barcode-text, .qr-text {
+            font-size: 7px;
+        }
+        
+        .delivery-service-cell, .tracking-cell {
+            font-size: 8px;
+            padding: 2mm;
+        }
+        
+        .product-header, .customer-header, .totals-header {
+            font-size: 8px;
+            padding: 1mm;
+        }
+        
+        .customer-info, .totals-cell {
+            font-size: 8px;
+            line-height: 1.2;
+            padding: 2mm;
+        }
+        
+        .total-payable {
+            font-size: 9px;
+            padding: 2mm;
+        }
+        
+        .print-instructions {
+            padding: 20px;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            margin: 10px;
+            border-radius: 5px;
+        }
+
+        .print-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 10px;
+        }
+
+        .print-button:hover {
+            background: #0056b3;
+        }
+        
+        .no-orders {
+            text-align: center;
+            padding: 50px;
+            font-size: 16px;
+            color: #666;
+        }
+        
+        .page-wrapper {
+            display: contents;
+        }
+        
+        @media print {
+            .print-instructions {
+                display: none !important;
+            }
+            
+            body {
+                margin: 0;
+                padding: 0;
+            }
+            
+            .labels-container {
+                display: block;
+                gap: 0;
+                padding: 0;
+            }
+            
+            .page-wrapper {
+                display: block;
+                width: 100%;
+                height: 100vh;
+                page-break-after: always;
+            }
+            
+            .page-wrapper:last-child {
+                page-break-after: avoid;
+            }
+            
+            .label-wrapper {
+                display: inline-block;
+                vertical-align: top;
+                margin: 2mm;
+                width: calc(50% - 4mm); /* 2 labels per row */
+                box-sizing: border-box;
+            }
+            
+            .label-wrapper:nth-child(2n) {
+                margin-left: 0;
+            }
+            
+            .receipt-container {
+                width: 100%;
+                height: 13.9cm;
+                box-sizing: border-box;
+            }
+            
+            @page {
+                size: A4;
+                margin: 5mm;
+            }
+        }

@@ -1,0 +1,352 @@
+
+/* FIXED: Nine Nine specific styles for 8.5cm x 8.5cm labels, 6 per A4 page */
+@page {
+    size: A4;
+    margin: 5mm;
+}
+
+/* Page Layout - 6 labels per page in 2x3 grid */
+.page-wrapper {
+    display: grid;
+    grid-template-columns: repeat(2, 8.5cm);
+    grid-template-rows: repeat(3, 8.5cm);
+    gap: 2mm;
+    page-break-after: always;
+    justify-content: center;
+    align-content: start;
+}
+
+.page-wrapper:last-child {
+    page-break-after: auto;
+}
+
+/* Individual Label - FIXED: Better space management */
+.label-wrapper {
+    width: 8.5cm;
+    height: 8.5cm;
+    border: 1px dashed #333;
+    padding: 2mm;
+    overflow: hidden;
+    background: white;
+    box-sizing: border-box;
+}
+
+/* MODIFIED: Better layout using CSS Grid for simplified structure */
+.receipt-container {
+    width: 100%;
+    height: 100%;
+    display: grid;
+    grid-template-rows: auto auto 1fr auto auto; /* Header, Customer, Products, Totals, Barcode */
+    gap: 1mm;
+    font-size: 11px;
+    line-height: 1.2;
+}
+
+/* MODIFIED: Header Section with order info on the right */
+.header-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #333;
+    padding-bottom: 1mm;
+}
+
+.company-left {
+    display: flex;
+    align-items: center;
+    gap: 2mm;
+}
+
+.company-logo img {
+    max-width: 15mm;
+    max-height: 10mm;
+    object-fit: contain;
+}
+
+.company-name {
+    font-weight: bold;
+    font-size: 10px;
+}
+
+.order-right {
+    text-align: right;
+}
+
+.order-id {
+    font-weight: bold;
+    font-size: 10px;
+}
+
+.order-date {
+    font-size: 8px;
+    color: #666;
+}
+
+/* MODIFIED: Customer Section with separate address and city */
+.customer-section {
+    min-height: 0;
+}
+
+.customer-info {
+    font-size: 8px;
+    line-height: 1.3;
+}
+
+.customer-info div {
+    margin-bottom: 0.3mm;
+    word-wrap: break-word;
+    overflow: hidden;
+}
+
+/* Delivery Info - FIXED: More compact */
+.delivery-info {
+    font-size: 10px;
+    padding: 0.5mm;
+    background: #f9f9f9;
+    border: 1px solid #eee;
+    border-radius: 1mm;
+}
+
+/* Products Section - FIXED: Better table layout for all items */
+.products-section {
+    min-height: 0;
+    overflow: hidden;
+}
+
+.products-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 8px;
+}
+
+.products-table th {
+    background: #f0f0f0;
+    border: 1px solid #ccc;
+    padding: 0.3mm;
+    text-align: left;
+    font-weight: bold;
+    font-size: 7px;
+}
+
+.products-table td {
+    border: 1px solid #ccc;
+    padding: 0.3mm;
+    vertical-align: top;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 7px;
+    line-height: 1.1;
+}
+
+.qty-col {
+    text-align: center;
+    width: 8mm;
+}
+
+/* FIXED: Adjust table for many items */
+.label-wrapper.compact .products-table {
+    font-size: 6px;
+}
+
+.label-wrapper.compact .products-table th {
+    padding: 0.2mm;
+    font-size: 6px;
+}
+
+.label-wrapper.compact .products-table td {
+    padding: 0.2mm;
+    font-size: 6px;
+    line-height: 1.0;
+}
+
+/* FIXED: Special styling for "more items" row */
+.more-items-row {
+    background: #f8f9fa !important;
+    border-top: 2px solid #dee2e6 !important;
+}
+
+.more-items-row td {
+    font-style: italic !important;
+    color: #6c757d !important;
+    font-weight: bold !important;
+    text-align: center !important;
+    border-left: 1px solid #ccc !important;
+    border-right: 1px solid #ccc !important;
+    border-bottom: 1px solid #ccc !important;
+}
+
+/* FIXED: Alternative approach - display more items outside table */
+.more-items-notice {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 2px;
+    padding: 1mm;
+    margin-top: 0.5mm;
+    text-align: center;
+    font-size: 8px;
+    font-style: italic;
+    color: #6c757d;
+    font-weight: bold;
+}
+
+/* MODIFIED: Simplified Totals Section - only show total */
+.totals-section {
+    border-top: 1px solid #333;
+    padding-top: 0.5mm;
+}
+
+.products-header{
+     border-top: 1px solid #333;
+    padding-top: 0.5mm;
+}
+
+.total-only {
+    font-weight: bold;
+    font-size: 12px;
+    text-align: center;
+    padding: 1mm;
+    background: #f5f5f5;
+    border: 1px solid #ddd;
+    border-radius: 1mm;
+}
+
+/* FIXED: Barcode Section - Always visible at bottom */
+.barcode-section {
+    text-align: center;
+}
+
+.barcode-image {
+    max-width: 40mm;
+    height: 16mm;
+    object-fit: contain;
+}
+
+.barcode-text {
+    font-size: 7px;
+    margin-top: 0.5mm;
+    font-weight: bold;
+}
+
+/* FIXED: Responsive text sizing for different content amounts */
+.label-wrapper.compact .receipt-container {
+    font-size: 10px;
+}
+
+.label-wrapper.compact .products-table {
+    font-size: 7px;
+}
+
+/* Print Media Query */
+@media print {
+    .print-instructions {
+        display: none !important;
+    }
+    
+    body {
+        background: white !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    
+    .page-wrapper {
+        page-break-inside: avoid;
+    }
+
+    .barcode-section {
+        break-inside: avoid;
+    }
+}
+
+@media print {
+    .label-wrapper {
+        overflow: visible;
+    }
+    
+    .receipt-container {
+        height: calc(8.5cm - 4mm);
+    }
+}
+
+
+/* Bulk Print Instructions Styles - Exact Match */
+.print-instructions {
+    background: #ffffff;
+    border: 1px solid #ddd;
+    padding: 15px;
+    margin: 10px 0;
+    font-family: Arial, sans-serif;
+    font-size: 13px;
+    color: #333;
+    
+}
+
+.print-instructions h3 {
+    color: #333;
+    margin: 0 0 10px 0;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.print-instructions p {
+    margin: 3px 0;
+    color: #333;
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+.print-instructions p strong {
+    font-weight: bold;
+    color: #333;
+}
+
+.print-instructions ul {
+    margin: 5px 0 5px 0;
+    padding-left: 20px;
+    color: #333;
+    font-size: 13px;
+}
+
+.print-instructions li {
+    margin: 2px 0;
+    line-height: 1.4;
+    list-style-type: disc;
+}
+
+.print-button {
+    background: #007cff;
+    color: white;
+    border: 1px solid #007cff;
+    padding: 6px 12px;
+    margin: 10px 8px 0 0;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: normal;
+    display: inline-block;
+    text-decoration: none;
+}
+
+.print-button:hover {
+    background: #0056b3;
+    border-color: #0056b3;
+}
+
+/* Close button - gray styling */
+.print-button[style*="background: #6c757d"] {
+    background: #6c757d !important;
+    border-color: #6c757d !important;
+}
+
+.print-button[style*="background: #6c757d"]:hover {
+    background: #545b62 !important;
+    border-color: #545b62 !important;
+}
+
+/* Print media query - hide instructions when printing */
+@media print {
+    .print-instructions {
+        display: none !important;
+    }
+}
+
