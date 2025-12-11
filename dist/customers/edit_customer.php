@@ -170,6 +170,31 @@ include($_SERVER['DOCUMENT_ROOT'] . '/OMS/dist/include/sidebar.php');
             100% { transform: rotate(360deg); }
         }
 
+        /* Styles for city dropdown */
+        .city-suggestions-dropdown {
+            position: absolute;
+            z-index: 1000;
+            background-color: #fff;
+            border: 1px solid #ced4da;
+            border-radius: .25rem;
+            max-height: 200px;
+            overflow-y: auto;
+            width: calc(100% - 30px); /* Adjust based on form-group padding */
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+            display: none; /* Hidden by default */
+        }
+
+        .city-suggestion-item {
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            color: #212529;
+        }
+
+        .city-suggestion-item:hover,
+        .city-suggestion-item.active {
+            background-color: #e9ecef;
+        }
+
         .customer-info {
             background: #f8f9fa;
             padding: 1rem;
@@ -313,26 +338,15 @@ include($_SERVER['DOCUMENT_ROOT'] . '/OMS/dist/include/sidebar.php');
                             <!-- Second Row: City -->
                             <div class="form-row">
                                 <div class="customer-form-group">
-                                    <label for="city_id" class="form-label">
+                                    <label for="city_name_input" class="form-label">
                                         <i class="fas fa-city"></i> City<span class="required">*</span>
                                     </label>
-                                    <select class="form-select" id="city_id" name="city_id" required>
-                                        <option value="">Select City</option>
-                                        <?php if (!empty($cities)): ?>
-                                            <?php foreach ($cities as $city): ?>
-                                                <option value="<?= htmlspecialchars($city['city_id']) ?>" 
-                                                    <?= $customer['city_id'] == $city['city_id'] ? 'selected' : '' ?>>
-                                                    <?= htmlspecialchars($city['city_name']) ?>
-                                                </option>
-                                            <?php endforeach; ?>
-                                        <?php else: ?>
-                                            <option value="" disabled>No cities available</option>
-                                        <?php endif; ?>
-                                    </select>
+                                    <input type="text" class="form-control" id="city_name_input" name="city_name_input"
+                                        placeholder="Type to select city" required autocomplete="off"
+                                        value="<?= htmlspecialchars($customer['city_name'] ?? '') ?>">
+                                    <input type="hidden" id="city_id" name="city_id" value="<?= htmlspecialchars($customer['city_id'] ?? '') ?>">
+                                    <div class="city-suggestions-dropdown" id="city-suggestions-dropdown"></div>
                                     <div class="error-feedback" id="city_id-error"></div>
-                                    <?php if (empty($cities)): ?>
-                                        <div class="no-cities-message">No cities found. Please contact administrator.</div>
-                                    <?php endif; ?>
                                 </div>
                             </div>
                         </div>
@@ -395,13 +409,83 @@ include($_SERVER['DOCUMENT_ROOT'] . '/OMS/dist/include/sidebar.php');
                 }
             });
             
-            // Reset button
-            $('#resetBtn').on('click', function() {
-                resetForm();
-            });
-            
             // Real-time validation
             setupRealTimeValidation();
+
+            // City autocomplete functionality
+            let debounceTimer;
+            $('#city_name_input').on('input', function() {
+                const $this = $(this);
+                const query = $this.val();
+                
+                // Clear previously selected city_id if user types again
+                $('#city_id').val('');
+                clearValidation('city_name_input'); // Clear error for city name input
+                
+                clearTimeout(debounceTimer);
+                if (query.length < 2) {
+                    $('#city-suggestions-dropdown').empty().hide();
+                    return;
+                }
+
+                debounceTimer = setTimeout(() => {
+                    $.ajax({
+                        url: 'get_cities.php',
+                        type: 'GET',
+                        data: { term: query },
+                        dataType: 'json',
+                        success: function(cities) {
+                            const $dropdown = $('#city-suggestions-dropdown');
+                            $dropdown.empty();
+                            if (cities.length > 0) {
+                                cities.forEach(city => {
+                                    $dropdown.append(
+                                        `<div class="city-suggestion-item" data-city-id="${city.id}">${city.name}</div>`
+                                    );
+                                });
+                                $dropdown.show();
+                            } else {
+                                $dropdown.hide();
+                            }
+                        },
+                        error: function(xhr, status, error) {
+                            console.error('Error fetching cities:', error);
+                            $('#city-suggestions-dropdown').empty().hide();
+                        }
+                    });
+                }, 300); // 300ms debounce
+            });
+
+            // Handle click on suggestion item
+            $(document).on('click', '.city-suggestion-item', function() {
+                const $this = $(this);
+                const cityId = $this.data('city-id');
+                const cityName = $this.text();
+
+                $('#city_name_input').val(cityName);
+                $('#city_id').val(cityId);
+                $('#city-suggestions-dropdown').empty().hide();
+                showSuccess('city_name_input'); // Show success for the input field
+                showSuccess('city_id'); // Show success for the hidden ID field for validation
+            });
+
+            // Hide suggestions when clicking outside
+            $(document).on('click', function(e) {
+                if (!$(e.target).closest('.customer-form-group').is($('#city_name_input').parent())) {
+                    $('#city-suggestions-dropdown').empty().hide();
+                }
+            });
+
+            // Clear selected city if input is cleared manually
+            $('#city_name_input').on('blur', function() {
+                if ($(this).val().trim() === '' && $('#city_id').val() !== '') {
+                    $('#city_id').val('');
+                    showError('city_id', 'City selection is required');
+                } else if ($(this).val().trim() !== '' && $('#city_id').val() === '') {
+                    // If user typed something but didn't select, show error
+                    showError('city_id', 'Please select a city from the suggestions');
+                }
+            });
         });
 
         // Store original form data
@@ -413,7 +497,8 @@ include($_SERVER['DOCUMENT_ROOT'] . '/OMS/dist/include/sidebar.php');
                 status: $('#status').val(),
                 address_line1: $('#address_line1').val(),
                 address_line2: $('#address_line2').val(),
-                city_id: $('#city_id').val()
+                city_name_input: $('#city_name_input').val(), // Store visible city name
+                city_id: $('#city_id').val() // Store hidden city ID
             };
         }
 
@@ -480,7 +565,12 @@ include($_SERVER['DOCUMENT_ROOT'] . '/OMS/dist/include/sidebar.php');
         // Show field-specific errors from server
         function showFieldErrors(errors) {
             $.each(errors, function(field, message) {
-                showError(field, message);
+                // Map server error fields to client-side IDs
+                if (field === 'city_id') {
+                    showError('city_name_input', message); // Show error on the visible input field
+                } else {
+                    showError(field, message);
+                }
             });
         }
         
@@ -545,10 +635,12 @@ include($_SERVER['DOCUMENT_ROOT'] . '/OMS/dist/include/sidebar.php');
             $('#status').val(originalFormData.status);
             $('#address_line1').val(originalFormData.address_line1);
             $('#address_line2').val(originalFormData.address_line2);
-            $('#city_id').val(originalFormData.city_id);
+            $('#city_name_input').val(originalFormData.city_name_input); // Reset visible city name
+            $('#city_id').val(originalFormData.city_id); // Reset hidden city ID
             
             clearAllValidations();
             $('#email-suggestions').html('');
+            $('#city-suggestions-dropdown').empty().hide(); // Hide suggestions
             $('#name').focus();
         }
         
@@ -648,12 +740,12 @@ include($_SERVER['DOCUMENT_ROOT'] . '/OMS/dist/include/sidebar.php');
                 }
             });
             
-            $('#city_id').on('change', function() {
-                const validation = validateCity($(this).val());
+            $('#city_name_input').on('blur', function() {
+                const validation = validateCitySelection($('#city_id').val());
                 if (!validation.valid) {
-                    showError('city_id', validation.message);
+                    showError('city_name_input', validation.message);
                 } else {
-                    showSuccess('city_id');
+                    showSuccess('city_name_input');
                 }
             });
         }
@@ -725,8 +817,8 @@ include($_SERVER['DOCUMENT_ROOT'] . '/OMS/dist/include/sidebar.php');
             return { valid: true, message: '' };
         }
 
-        function validateCity(cityId) {
-            if (cityId.trim() === '') {
+        function validateCitySelection(cityId) {
+            if (cityId === '' || cityId === null) {
                 return { valid: false, message: 'City selection is required' };
             }
             return { valid: true, message: '' };
@@ -810,7 +902,8 @@ include($_SERVER['DOCUMENT_ROOT'] . '/OMS/dist/include/sidebar.php');
             const email = $('#email').val();
             const phone = $('#phone').val();
             const addressLine1 = $('#address_line1').val();
-            const cityId = $('#city_id').val();
+            const cityId = $('#city_id').val(); // Get value from hidden input
+            const cityNameInput = $('#city_name_input').val(); // Get value from visible input
             
             // Validate required fields
             const validations = [
@@ -818,16 +911,17 @@ include($_SERVER['DOCUMENT_ROOT'] . '/OMS/dist/include/sidebar.php');
                 { field: 'email', validator: validateEmail, value: email },
                 { field: 'phone', validator: validatePhone, value: phone },
                 { field: 'address_line1', validator: validateAddressLine1, value: addressLine1 },
-                { field: 'city_id', validator: validateCity, value: cityId }
+                // Use city_id for actual validation, but show error on city_name_input
+                { field: 'city_id', validator: validateCitySelection, value: cityId, errorField: 'city_name_input' }
             ];
             
             validations.forEach(function(validation) {
                 const result = validation.validator(validation.value);
                 if (!result.valid) {
-                    showError(validation.field, result.message);
+                    showError(validation.errorField || validation.field, result.message);
                     isValid = false;
                 } else {
-                    showSuccess(validation.field);
+                    showSuccess(validation.errorField || validation.field);
                 }
             });
             

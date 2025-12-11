@@ -316,15 +316,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $insertOrderSql = "INSERT INTO order_header (
             customer_id, user_id, issue_date, due_date, 
             subtotal, discount, total_amount, delivery_fee,
-            notes, currency, status, pay_status, pay_date, created_by
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            notes, currency, status, pay_status, pay_date, created_by, city_id
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         
         $stmt = $conn->prepare($insertOrderSql);
         $stmt->bind_param(
-            "iissddddsssssi", 
+            "iissddddsssssii", 
             $customer_id, $user_id, $order_date, $due_date, 
             $subtotal_before_discounts, $total_discount, $total_amount, $delivery_fee,
-            $notes, $currency, $status, $pay_status, $pay_date, $user_id
+            $notes, $currency, $status, $pay_status, $pay_date, $user_id, $city_id
         );
         $stmt->execute();
         $order_id = $conn->insert_id;

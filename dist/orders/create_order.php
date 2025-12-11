@@ -136,6 +136,37 @@ include($_SERVER['DOCUMENT_ROOT'] . '/OMS/dist/include/sidebar.php');
     <link rel="stylesheet" href="../assets/css/styles.css" id="main-style-link" />
     <link rel="stylesheet" href="../assets/css/alert.css" id="main-style-link" />
 
+    <!-- Custom CSS for city dropdown -->
+    <style>
+        .city-suggestions-container {
+            position: relative;
+        }
+
+        .city-suggestions-dropdown {
+            position: absolute;
+            z-index: 1050; /* Ensure it's above other elements */
+            background-color: #fff;
+            border: 1px solid #ced4da;
+            border-radius: .25rem;
+            max-height: 200px;
+            overflow-y: auto;
+            width: 100%;
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+            display: none; /* Hidden by default */
+        }
+
+        .city-suggestion-item {
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            color: #212529;
+        }
+
+        .city-suggestion-item:hover,
+        .city-suggestion-item.active {
+            background-color: #e9ecef;
+        }
+    </style>
+
 </head>
 
 <body>
@@ -345,17 +376,13 @@ include($_SERVER['DOCUMENT_ROOT'] . '/OMS/dist/include/sidebar.php');
                                     <input type="text" class="form-control" name="customer_phone" id="customer_phone" placeholder="(07) xxxx xxxx">
                                 </div>
                                 <div class="form-group">
-                                    <label class="form-label">City</label>
-                                    <select class="form-control" name="city_id" id="city_id">
-                                        <option value="">-- Select City --</option>
-                                        <?php
-                                        if ($cityResult && $cityResult->num_rows > 0) {
-                                            while ($city = $cityResult->fetch_assoc()) {
-                                                echo '<option value="' . $city['city_id'] . '">' . htmlspecialchars($city['city_name']) . '</option>';
-                                            }
-                                        }
-                                        ?>
-                                    </select>
+                                    <label for="city_name_input" class="form-label">City</label>
+                                    <div class="city-suggestions-container">
+                                        <input type="text" class="form-control" id="city_name_input" name="city_name_input"
+                                            placeholder="Type to select city" autocomplete="off">
+                                        <input type="hidden" id="city_id" name="city_id" value="">
+                                        <div class="city-suggestions-dropdown" id="city-suggestions-dropdown"></div>
+                                    </div>
                                 </div>
                                 <div class="form-group">
                                     <label class="form-label">Address Line 1</label>
@@ -936,6 +963,7 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('customer_phone').value = row.getAttribute('data-phone');
             document.getElementById('address_line1').value = row.getAttribute('data-address-line1');
             document.getElementById('address_line2').value = row.getAttribute('data-address-line2');
+            document.getElementById('city_name_input').value = row.getAttribute('data-city-name'); // Populate city name
             document.getElementById('city_id').value = row.getAttribute('data-city-id');
             
             // Set flag and make fields readonly
@@ -948,6 +976,64 @@ document.addEventListener('DOMContentLoaded', function() {
             customerModal.style.display = "none";
             alert('Customer selected: ' + row.getAttribute('data-name'));
         });
+    });
+
+    // City autocomplete functionality
+    let debounceTimer;
+    const cityNameInput = document.getElementById('city_name_input');
+    const cityIdInput = document.getElementById('city_id');
+    const suggestionsDropdown = document.getElementById('city-suggestions-dropdown');
+
+    cityNameInput.addEventListener('input', function() {
+        const query = this.value;
+        
+        // Clear previously selected city_id if user types again
+        cityIdInput.value = '';
+        
+        clearTimeout(debounceTimer);
+        if (query.length < 2) {
+            suggestionsDropdown.innerHTML = '';
+            suggestionsDropdown.style.display = 'none';
+            return;
+        }
+
+        debounceTimer = setTimeout(() => {
+            // Assuming get_cities.php is in the customers directory
+            fetch(`../customers/get_cities.php?term=${encodeURIComponent(query)}`)
+                .then(response => response.json())
+                .then(cities => {
+                    suggestionsDropdown.innerHTML = '';
+                    if (cities.length > 0) {
+                        cities.forEach(city => {
+                            const item = document.createElement('div');
+                            item.className = 'city-suggestion-item';
+                            item.textContent = city.name;
+                            item.setAttribute('data-city-id', city.id);
+                            item.addEventListener('click', function() {
+                                cityNameInput.value = this.textContent;
+                                cityIdInput.value = this.getAttribute('data-city-id');
+                                suggestionsDropdown.innerHTML = '';
+                                suggestionsDropdown.style.display = 'none';
+                            });
+                            suggestionsDropdown.appendChild(item);
+                        });
+                        suggestionsDropdown.style.display = 'block';
+                    } else {
+                        suggestionsDropdown.style.display = 'none';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching cities:', error);
+                    suggestionsDropdown.style.display = 'none';
+                });
+        }, 300); // 300ms debounce
+    });
+
+    // Hide suggestions when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.city-suggestions-container')) {
+            suggestionsDropdown.style.display = 'none';
+        }
     });
 
     // Add "Clear Selection" button functionality (you may want to add this button to your HTML)
