@@ -26,12 +26,14 @@ $show_payment_details = isset($_GET['show_payment']) && $_GET['show_payment'] ==
 $order_query = "SELECT i.*, i.pay_status AS order_pay_status, c.name as customer_name, 
                 CONCAT_WS(', ', c.address_line1, c.address_line2) as customer_address, 
                 c.email as customer_email, c.phone as customer_phone,
+                ct.city_name as customer_city,
                 p.payment_id, p.amount_paid, p.payment_method, p.payment_date, p.pay_by,
                 r.name as paid_by_name, u.name as user_name,
                 i.delivery_fee, i.pay_by as order_pay_by, i.pay_date as order_pay_date, 
                 i.slip as payment_slip
                 FROM order_header i 
                 LEFT JOIN customers c ON i.customer_id = c.customer_id
+                LEFT JOIN city_table ct ON c.city_id = ct.city_id
                 LEFT JOIN payments p ON i.order_id = p.order_id
                 LEFT JOIN roles r ON p.pay_by = r.id
                 LEFT JOIN users u ON i.user_id = u.id
@@ -455,7 +457,10 @@ $column_count = $has_any_discount ? 5 : 4;
                     <strong><?php echo htmlspecialchars($order['customer_name']); ?></strong><br>
                     <?php echo nl2br(htmlspecialchars($order['customer_address'])); ?><br>
                     Email: <?php echo htmlspecialchars($order['customer_email']); ?><br>
-                    Phone: <?php echo htmlspecialchars($order['customer_phone']); ?>
+                    Phone: <?php echo htmlspecialchars($order['customer_phone']); ?><br>
+                    <?php if (!empty($order['customer_city'])): ?>
+                        City: <?php echo htmlspecialchars($order['customer_city']); ?>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
