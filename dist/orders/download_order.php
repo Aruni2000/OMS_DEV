@@ -458,9 +458,8 @@ $column_count = $has_any_discount ? 5 : 4;
                     <?php echo nl2br(htmlspecialchars($order['customer_address'])); ?><br>
                     Email: <?php echo htmlspecialchars($order['customer_email']); ?><br>
                     Phone: <?php echo htmlspecialchars($order['customer_phone']); ?><br>
-                    <?php if (!empty($order['customer_city'])): ?>
-                        City: <?php echo htmlspecialchars($order['customer_city']); ?>
-                    <?php endif; ?>
+                    City: <?php echo htmlspecialchars($order['customer_city']); ?>
+                    
                 </div>
             </div>
         </div>
