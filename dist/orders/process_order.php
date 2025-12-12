@@ -106,6 +106,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $customer_name = trim($_POST['customer_name']);
         $customer_email = trim($_POST['customer_email'] ?? '');
         $customer_phone = trim($_POST['customer_phone'] ?? '');
+        $customer_phone2 = trim($_POST['customer_phone2'] ?? '');
         
         // Additional customer validation (optional but recommended)
         if (!empty($customer_email) && !filter_var($customer_email, FILTER_VALIDATE_EMAIL)) {
@@ -153,7 +154,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         
         if ($provided_customer_id > 0) {
             // Validate the provided customer ID exists
-            $checkIdSql = "SELECT customer_id, city_id FROM customers WHERE customer_id = ?";
+            $checkIdSql = "SELECT customer_id, city_id, phone2 FROM customers WHERE customer_id = ?";
             $idStmt = $conn->prepare($checkIdSql);
             $idStmt->bind_param("i", $provided_customer_id);
             $idStmt->execute();
@@ -171,13 +172,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 // Update existing customer information
                 $updateCustomerSql = "UPDATE customers SET 
                                      phone = ?, 
+                                     phone2 = ?,
                                      address_line1 = ?, 
                                      address_line2 = ?, 
                                      city_id = ?, 
                                      status = 'Active' 
                                      WHERE customer_id = ?";
                 $stmt = $conn->prepare($updateCustomerSql);
-                $stmt->bind_param("sssii", $customer_phone, $address_line1, $address_line2, $city_id, $customer_id);
+                $stmt->bind_param("ssssii", $customer_phone, $customer_phone2, $address_line1, $address_line2, $city_id, $customer_id);
                 $stmt->execute();
             }
         }
@@ -185,12 +187,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         // If no valid customer ID found, try lookup by Name and Email (if email provided)
         if ($customer_id === 0) {
             if (!empty($customer_email)) {
-                $checkCustomerSql = "SELECT customer_id, city_id FROM customers WHERE name = ? AND email = ?";
+                $checkCustomerSql = "SELECT customer_id, city_id, phone2 FROM customers WHERE name = ? AND email = ?";
                 $stmt = $conn->prepare($checkCustomerSql);
                 $stmt->bind_param("ss", $customer_name, $customer_email);
             } else {
                 // If no email, check by Name and Phone (since email is optional/null)
-                $checkCustomerSql = "SELECT customer_id, city_id FROM customers WHERE name = ? AND phone = ?";
+                $checkCustomerSql = "SELECT customer_id, city_id, phone2 FROM customers WHERE name = ? AND phone = ?";
                 $stmt = $conn->prepare($checkCustomerSql);
                 $stmt->bind_param("ss", $customer_name, $customer_phone);
             }
@@ -210,23 +212,24 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 // Update existing customer
                 $updateCustomerSql = "UPDATE customers SET 
                                      phone = ?, 
+                                     phone2 = ?,
                                      address_line1 = ?, 
                                      address_line2 = ?, 
                                      city_id = ?, 
                                      status = 'Active' 
                                      WHERE customer_id = ?";
                 $stmt = $conn->prepare($updateCustomerSql);
-                $stmt->bind_param("sssii", $customer_phone, $address_line1, $address_line2, $city_id, $customer_id);
+                $stmt->bind_param("ssssii", $customer_phone, $customer_phone2, $address_line1, $address_line2, $city_id, $customer_id);
                 $stmt->execute();
             } else {
                 // Create new customer
                 // Convert empty email to NULL to prevent unique constraint violation
                 $db_email = empty($customer_email) ? null : $customer_email;
                 
-                $insertCustomerSql = "INSERT INTO customers (name, email, phone, address_line1, address_line2, city_id, status, created_at, updated_at) 
-                                     VALUES (?, ?, ?, ?, ?, ?, 'Active', NOW(), NOW())";
+                $insertCustomerSql = "INSERT INTO customers (name, email, phone, phone2, address_line1, address_line2, city_id, status, created_at, updated_at) 
+                                     VALUES (?, ?, ?, ?, ?, ?, ?, 'Active', NOW(), NOW())";
                 $stmt = $conn->prepare($insertCustomerSql);
-                $stmt->bind_param("sssssi", $customer_name, $db_email, $customer_phone, $address_line1, $address_line2, $city_id);
+                $stmt->bind_param("ssssssi", $customer_name, $db_email, $customer_phone, $customer_phone2, $address_line1, $address_line2, $city_id);
                 $stmt->execute();
                 $customer_id = $conn->insert_id;
             }
@@ -317,15 +320,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $insertOrderSql = "INSERT INTO order_header (
             customer_id, user_id, issue_date, due_date, 
             subtotal, discount, total_amount, delivery_fee,
-            notes, currency, status, pay_status, pay_date, created_by, city_id, address_line1, address_line2, mobile, full_name
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            notes, currency, status, pay_status, pay_date, created_by, city_id, address_line1, address_line2, mobile, mobile2, full_name
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         
         $stmt = $conn->prepare($insertOrderSql);
         $stmt->bind_param(
-            "iissddddsssssiissss", 
+            "iissddddsssssiisssss", 
             $customer_id, $user_id, $order_date, $due_date, 
             $subtotal_before_discounts, $total_discount, $total_amount, $delivery_fee,
-            $notes, $currency, $status, $pay_status, $pay_date, $user_id, $city_id, $address_line1, $address_line2, $customer_phone, $customer_name
+            $notes, $currency, $status, $pay_status, $pay_date, $user_id, $city_id, $address_line1, $address_line2, $customer_phone, $customer_phone2, $customer_name
         );
         $stmt->execute();
         $order_id = $conn->insert_id;
@@ -476,7 +479,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                             'parcel_description' => $parcel_description,
                             'recipient_name' => $customer_name,
                             'recipient_contact_1' => $customer_phone,
-                            'recipient_contact_2' => '',
+                            'recipient_contact_2' => $customer_phone2,
                             'recipient_address' => trim($address_line1 . ' ' . $address_line2),
                             'recipient_city' => $city_name,
                             'amount' => $api_amount,
@@ -634,7 +637,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                 'parcel_description' => $parcel_description,
                                 'recipient_name' => $customer_name,
                                 'recipient_contact_1' => $customer_phone,
-                                'recipient_contact_2' => '',
+                                'recipient_contact_2' => $customer_phone2,
                                 'recipient_address' => trim($address_line1 . ' ' . $address_line2),
                                 'recipient_city' => $city_name,
                                 'amount' => $api_amount,
@@ -1098,7 +1101,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             'address' => trim($address_line1 . ' ' . $address_line2),
             'description' => 'Order #' . $order_id,
             'phone_no' => $clean_phone,
-            'phone_no2' => '',
+            'phone_no2' => preg_replace('/[^0-9]/', '', $customer_phone2),
             'cod' => $api_amount,
             'city_id' => (int)$city_id,
             'note' => $notes ?? ''
@@ -1194,7 +1197,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 'address' => trim($address_line1 . ' ' . $address_line2),
                 'description' => 'Order #' . $order_id . ' - ' . count($order_items) . ' items',
                 'phone_no' => $clean_phone,
-                'phone_no2' => '',
+                'phone_no2' => preg_replace('/[^0-9]/', '', $customer_phone2),
                 'cod' => $api_amount,
                 'city_id' => $city_id,
                 'note' => $notes ?? ''

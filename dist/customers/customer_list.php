@@ -273,6 +273,7 @@ $cities = $city_result->fetch_all(MYSQLI_ASSOC);
                                         <td>
                                             <div style="line-height: 1.4;">
                                                 <div style="font-weight: 500; margin-bottom: 2px;"><?php echo htmlspecialchars($row['phone']); ?></div>
+                                                <div style="font-weight: 500; margin-bottom: 2px; color: #31587aff; font-size: 13px;"><?php echo htmlspecialchars($row['phone2']); ?></div>
                                                 <div style="font-size: 12px; color: #6c757d;"><?php echo htmlspecialchars($row['email']); ?></div>
                                             </div>
                                         </td>

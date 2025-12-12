@@ -376,6 +376,10 @@ include($_SERVER['DOCUMENT_ROOT'] . '/OMS/dist/include/sidebar.php');
                                     <input type="text" class="form-control" name="customer_phone" id="customer_phone" placeholder="(07) xxxx xxxx">
                                 </div>
                                 <div class="form-group">
+                                    <label class="form-label">Secondary Phone <span style="font-size: 0.8em; color: #6c757d; font-weight: normal;">(Optional)</span></label>
+                                    <input type="text" class="form-control" name="customer_phone2" id="customer_phone2" placeholder="(07) xxxx xxxx (Optional)">
+                                </div>
+                                <div class="form-group">
                                     <label for="city_name_input" class="form-label">City</label>
                                     <div class="city-suggestions-container">
                                         <input type="text" class="form-control" id="city_name_input" name="city_name_input"
@@ -595,6 +599,7 @@ include($_SERVER['DOCUMENT_ROOT'] . '/OMS/dist/include/sidebar.php');
                                 data-name="<?= htmlspecialchars($customer['name'] ?? '') ?>"
                                 data-email="<?= htmlspecialchars($customer['email'] ?? '') ?>"
                                 data-phone="<?= htmlspecialchars($customer['phone'] ?? '') ?>"
+                                data-phone2="<?= htmlspecialchars($customer['phone2'] ?? '') ?>"
                                 data-address-line1="<?= htmlspecialchars($customer['address_line1'] ?? '') ?>"
                                 data-address-line2="<?= htmlspecialchars($customer['address_line2'] ?? '') ?>"
                                 data-city-name="<?= htmlspecialchars($customer['city_name'] ?? '') ?>"
@@ -609,6 +614,9 @@ include($_SERVER['DOCUMENT_ROOT'] . '/OMS/dist/include/sidebar.php');
                                 <td>
                                     <div class="contact-info">
                                         <div class="phone-number"><?= htmlspecialchars($customer['phone'] ?? '') ?></div>
+                                        <?php if (!empty($customer['phone2'])): ?>
+                                        <div class="phone-number" style="font-size: 0.9em; color: #6c757d;"><?= htmlspecialchars($customer['phone2']) ?></div>
+                                        <?php endif; ?>
                                         <div class="email-address"><?= htmlspecialchars($customer['email'] ?? '') ?></div>
                                     </div>
                                 </td>
@@ -664,7 +672,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Function to toggle field editability based on customer type
     function toggleCustomerFields(readonly = false) {
         const fields = [
-            'customer_name', 'customer_email', 'customer_phone', 
+            'customer_name', 'customer_email', 'customer_phone', 'customer_phone2',
             'city_id', 'address_line1', 'address_line2'
         ];
         fields.forEach(fieldId => {
@@ -693,6 +701,7 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('customer_name').value = '';
         document.getElementById('customer_email').value = '';
         document.getElementById('customer_phone').value = '';
+        document.getElementById('customer_phone2').value = '';
         document.getElementById('city_id').value = '';
         document.getElementById('address_line1').value = '';
         document.getElementById('address_line2').value = '';
@@ -961,6 +970,7 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('customer_name').value = row.getAttribute('data-name');
             document.getElementById('customer_email').value = row.getAttribute('data-email');
             document.getElementById('customer_phone').value = row.getAttribute('data-phone');
+            document.getElementById('customer_phone2').value = row.getAttribute('data-phone2');
             document.getElementById('address_line1').value = row.getAttribute('data-address-line1');
             document.getElementById('address_line2').value = row.getAttribute('data-address-line2');
             document.getElementById('city_name_input').value = row.getAttribute('data-city-name'); // Populate city name
