@@ -312,19 +312,20 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         // Final total calculation with delivery fee
         $total_amount = $subtotal_before_discounts - $total_discount + $delivery_fee;
         
+        
         // Insert order_header
         $insertOrderSql = "INSERT INTO order_header (
             customer_id, user_id, issue_date, due_date, 
             subtotal, discount, total_amount, delivery_fee,
-            notes, currency, status, pay_status, pay_date, created_by, city_id, address_line1, address_line2
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            notes, currency, status, pay_status, pay_date, created_by, city_id, address_line1, address_line2, mobile, full_name
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         
         $stmt = $conn->prepare($insertOrderSql);
         $stmt->bind_param(
-            "iissddddsssssiiss", 
+            "iissddddsssssiissss", 
             $customer_id, $user_id, $order_date, $due_date, 
             $subtotal_before_discounts, $total_discount, $total_amount, $delivery_fee,
-            $notes, $currency, $status, $pay_status, $pay_date, $user_id, $city_id, $address_line1, $address_line2
+            $notes, $currency, $status, $pay_status, $pay_date, $user_id, $city_id, $address_line1, $address_line2, $customer_phone, $customer_name
         );
         $stmt->execute();
         $order_id = $conn->insert_id;
