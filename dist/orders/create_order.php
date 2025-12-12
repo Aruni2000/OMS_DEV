@@ -1710,6 +1710,14 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('delivery_fee_row').style.display = 'none';
     updateTotals();
 });
+
+document.getElementById('orderForm').addEventListener('submit', function() {
+    // Set a timeout to reload the page after a short delay
+    setTimeout(function() {
+        // Reload the page to show the success/error message and clear the form
+        window.location.href = 'create_order.php';
+    }, 1000); // 1 second delay
+});
 </script>
 </body>
 </html>
