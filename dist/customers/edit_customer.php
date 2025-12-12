@@ -122,7 +122,7 @@ include($_SERVER['DOCUMENT_ROOT'] . '/OMS/dist/include/sidebar.php');
 
         .alert-warning {
             color: #664d03;
-            background: linear-gradient(135deg, #f8f9fa 0%, #fff3cd 100%);
+            background: linear_gradient(135deg, #f8f9fa 0%, #fff3cd 100%);
             border-left-color: #ffc107;
         }
 
@@ -292,6 +292,17 @@ include($_SERVER['DOCUMENT_ROOT'] . '/OMS/dist/include/sidebar.php');
                                         placeholder="0771234567" 
                                         value="<?= htmlspecialchars($customer['phone']) ?>" required>
                                     <div class="error-feedback" id="phone-error"></div>
+                                    <div class="phone-hint">Enter 10-digit Sri Lankan mobile number</div>
+                                </div>
+
+                                <div class="customer-form-group">
+                                    <label for="phone2" class="form-label">
+                                        <i class="fas fa-phone"></i> Secondary Phone Number <span class="text-muted small fw-normal"> (Optional)</span>
+                                    </label>
+                                    <input type="tel" class="form-control" id="phone2" name="phone2"
+                                        placeholder="0711234567"
+                                        value="<?= htmlspecialchars($customer['phone2'] ?? '') ?>">
+                                    <div class="error-feedback" id="phone2-error"></div>
                                     <div class="phone-hint">Enter 10-digit Sri Lankan mobile number</div>
                                 </div>
 
@@ -494,6 +505,7 @@ include($_SERVER['DOCUMENT_ROOT'] . '/OMS/dist/include/sidebar.php');
                 name: $('#name').val(),
                 email: $('#email').val(),
                 phone: $('#phone').val(),
+                phone2: $('#phone2').val(),
                 status: $('#status').val(),
                 address_line1: $('#address_line1').val(),
                 address_line2: $('#address_line2').val(),
@@ -632,6 +644,7 @@ include($_SERVER['DOCUMENT_ROOT'] . '/OMS/dist/include/sidebar.php');
             $('#name').val(originalFormData.name);
             $('#email').val(originalFormData.email);
             $('#phone').val(originalFormData.phone);
+            $('#phone2').val(originalFormData.phone2);
             $('#status').val(originalFormData.status);
             $('#address_line1').val(originalFormData.address_line1);
             $('#address_line2').val(originalFormData.address_line2);
@@ -667,6 +680,15 @@ include($_SERVER['DOCUMENT_ROOT'] . '/OMS/dist/include/sidebar.php');
             
             // Auto-format phone number
             $('#phone').on('input', function() {
+                let value = this.value.replace(/\D/g, '');
+                if (value.length > 10) {
+                    value = value.substring(0, 10);
+                }
+                this.value = value;
+            });
+
+            // Auto-format secondary phone number
+            $('#phone2').on('input', function() {
                 let value = this.value.replace(/\D/g, '');
                 if (value.length > 10) {
                     value = value.substring(0, 10);
@@ -715,6 +737,19 @@ include($_SERVER['DOCUMENT_ROOT'] . '/OMS/dist/include/sidebar.php');
                     showError('phone', validation.message);
                 } else {
                     showSuccess('phone');
+                }
+            });
+
+            $('#phone2').on('blur', function() {
+                if ($(this).val().trim() !== '') {
+                    const validation = validatePhone2($(this).val());
+                    if (!validation.valid) {
+                        showError('phone2', validation.message);
+                    } else {
+                        showSuccess('phone2');
+                    }
+                } else {
+                    clearValidation('phone2');
                 }
             });
             
@@ -800,6 +835,29 @@ include($_SERVER['DOCUMENT_ROOT'] . '/OMS/dist/include/sidebar.php');
             
             if (!localPattern.test(cleanPhone) && !internationalPattern.test(cleanPhone)) {
                 return { valid: false, message: 'Please enter a valid Sri Lankan phone number (e.g., 0771234567)' };
+            }
+            return { valid: true, message: '' };
+        }
+
+        function validatePhone2(phone2) {
+            if (phone2.trim() === '') {
+                return { valid: true, message: '' }; // Optional, so empty is valid
+            }
+            if (phone2.length > 20) {
+                return { valid: false, message: 'Secondary phone number is too long (maximum 20 characters)' };
+            }
+            const cleanPhone = phone2.replace(/\s+/g, '');
+            const digitsOnly = cleanPhone.replace(/[^0-9]/g, '');
+            
+            if (digitsOnly.length !== 10) {
+                return { valid: false, message: 'Secondary phone number must be exactly 10 digits' };
+            }
+            
+            const localPattern = /^0[1-9][0-9]{8}$/;
+            const internationalPattern = /^(\+94|94)[1-9][0-9]{8}$/;
+            
+            if (!localPattern.test(cleanPhone) && !internationalPattern.test(cleanPhone)) {
+                return { valid: false, message: 'Please enter a valid Sri Lankan phone number (e.g., 0711234567)' };
             }
             return { valid: true, message: '' };
         }
@@ -901,6 +959,7 @@ include($_SERVER['DOCUMENT_ROOT'] . '/OMS/dist/include/sidebar.php');
             const name = $('#name').val();
             const email = $('#email').val();
             const phone = $('#phone').val();
+            const phone2 = $('#phone2').val();
             const addressLine1 = $('#address_line1').val();
             const cityId = $('#city_id').val(); // Get value from hidden input
             const cityNameInput = $('#city_name_input').val(); // Get value from visible input
@@ -934,6 +993,17 @@ include($_SERVER['DOCUMENT_ROOT'] . '/OMS/dist/include/sidebar.php');
                     isValid = false;
                 } else {
                     showSuccess('address_line2');
+                }
+            }
+
+            // Validate phone2 if not empty
+            if (phone2.trim() !== '') {
+                const phone2Validation = validatePhone2(phone2);
+                if (!phone2Validation.valid) {
+                    showError('phone2', phone2Validation.message);
+                    isValid = false;
+                } else {
+                    showSuccess('phone2');
                 }
             }
             

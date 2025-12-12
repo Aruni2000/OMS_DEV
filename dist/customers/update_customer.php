@@ -101,6 +101,7 @@ try {
     $name = trim($_POST['name'] ?? '');
     $email = trim($_POST['email'] ?? '');
     $phone = trim($_POST['phone'] ?? '');
+    $phone2 = trim($_POST['phone2'] ?? '');
     $status = trim($_POST['status'] ?? 'Active');
     $address_line1 = trim($_POST['address_line1'] ?? '');
     $address_line2 = trim($_POST['address_line2'] ?? '');
@@ -117,7 +118,7 @@ try {
     }
 
     // Check if customer exists and get all current data for comparison
-    $customerCheckStmt = $conn->prepare("SELECT customer_id, name, email, phone, status, address_line1, address_line2, city_id FROM customers WHERE customer_id = ?");
+    $customerCheckStmt = $conn->prepare("SELECT customer_id, name, email, phone, phone2, status, address_line1, address_line2, city_id FROM customers WHERE customer_id = ?");
     $customerCheckStmt->bind_param("i", $customer_id);
     $customerCheckStmt->execute();
     $customerCheckResult = $customerCheckStmt->get_result();
@@ -150,7 +151,22 @@ try {
     
     if (empty($phone)) {
         $errors['phone'] = 'Phone number is required';
+    } else {
+        // Validate primary phone format
+        if (!preg_match('/^(0|94|\+94)[0-9]{9}$/', $phone)) {
+            $errors['phone'] = 'Invalid primary phone number format. Please use 10 digits starting with 0, 94 or +94.';
+        }
     }
+
+    // Validate secondary phone format if provided
+    if (!empty($phone2)) {
+        if (!preg_match('/^(0|94|\+94)[0-9]{9}$/', $phone2)) {
+            $errors['phone2'] = 'Invalid secondary phone number format. Please use 10 digits starting with 0, 94 or +94.';
+        }
+    } else {
+        $phone2 = null; // Set to null if empty for database update
+    }
+
     if (empty($address_line1)) {
         $errors['address_line1'] = 'Address Line 1 is required';
     }
@@ -171,7 +187,7 @@ try {
         $emailCheckStmt->close();
     }
 
-    // Check for duplicate phone (excluding current customer)
+    // Check for duplicate primary phone (excluding current customer)
     if (!empty($phone) && $phone !== $existingCustomer['phone']) {
         $phoneCheckStmt = $conn->prepare("SELECT customer_id FROM customers WHERE phone = ? AND customer_id != ?");
         $phoneCheckStmt->bind_param("si", $phone, $customer_id);
@@ -179,10 +195,45 @@ try {
         $phoneCheckResult = $phoneCheckStmt->get_result();
         
         if ($phoneCheckResult->num_rows > 0) {
-            $errors['phone'] = 'Phone number already exists. Please use a different phone number.';
+            $errors['phone'] = 'Primary phone number already exists. Please use a different phone number.';
         }
         $phoneCheckStmt->close();
     }
+
+    // Check if primary phone number exists as another customer's secondary number
+    if (!empty($phone) && $phone !== $existingCustomer['phone']) {
+        $phoneCheckStmt = $conn->prepare("SELECT customer_id FROM customers WHERE phone2 = ? AND customer_id != ?");
+        $phoneCheckStmt->bind_param("si", $phone, $customer_id);
+        $phoneCheckStmt->execute();
+        $phoneCheckResult = $phoneCheckStmt->get_result();
+        
+        if ($phoneCheckResult->num_rows > 0) {
+            $errors['phone'] = 'Primary phone number already exists. Please use a different phone number.';
+        }
+        $phoneCheckStmt->close();
+    }
+
+    //Check if secondary phone number already exists for another customer
+    // This checks if the provided secondary phone number (phone2) exists as either a primary (phone)
+    // or secondary (phone2) number for any other customer in the database.
+    if (!empty($phone2)) {
+        $phone2CheckStmt = $conn->prepare("SELECT customer_id FROM customers WHERE (phone = ? OR phone2 = ?) AND customer_id != ?");
+        // Use bind_param("ssi", ...) for string, string, integer
+        $phone2CheckStmt->bind_param("ssi", $phone2, $phone2, $customer_id);
+        $phone2CheckStmt->execute();
+        $phone2CheckResult = $phone2CheckStmt->get_result();
+
+        if ($phone2CheckResult->num_rows > 0) {
+            $errors['phone2'] = 'Secondary phone number already exists. Please use a different phone number.';
+        }
+        $phone2CheckStmt->close();
+    }
+
+    // Check if primary and secondary phone numbers are the same
+    if (!empty($phone) && !empty($phone2) && $phone === $phone2) {
+        $errors['phone2'] = 'Primary and secondary phone numbers cannot be the same.';
+    }
+
 
     // Validate city exists and is active
     if ($city_id > 0) {
@@ -226,6 +277,11 @@ try {
         $hasChanges = true;
         $changes[] = "Phone: '{$existingCustomer['phone']}' → '{$phone}'";
     }
+    // Check for changes in phone2
+    if ($phone2 !== $existingCustomer['phone2']) {
+        $hasChanges = true;
+        $changes[] = "Secondary Phone: '" . ($existingCustomer['phone2'] ?? 'NULL') . "' → '" . ($phone2 ?? 'NULL') . "'";
+    }
     if ($status !== $existingCustomer['status']) {
         $hasChanges = true;
         $changes[] = "Status: '{$existingCustomer['status']}' → '{$status}'";
@@ -253,6 +309,7 @@ try {
             'name' => $name,
             'email' => $email,
             'phone' => $phone,
+            'phone2' => $phone2,
             'status' => $status
         ];
         echo json_encode($response);
@@ -265,14 +322,15 @@ try {
     // Prepare and execute customer update
     $updateStmt = $conn->prepare("
         UPDATE customers 
-        SET name = ?, email = ?, phone = ?, status = ?, address_line1 = ?, address_line2 = ?, city_id = ?, updated_at = NOW()
+        SET name = ?, email = ?, phone = ?, phone2 = ?, status = ?, address_line1 = ?, address_line2 = ?, city_id = ?, updated_at = NOW()
         WHERE customer_id = ?
     ");
 
     // Convert empty email to NULL 
     $db_email = empty($email) ? null : $email;
 
-    $updateStmt->bind_param("ssssssii", $name, $db_email, $phone, $status, $address_line1, $address_line2, $city_id, $customer_id);
+    // Bind parameters, including phone2
+    $updateStmt->bind_param("sssssssii", $name, $db_email, $phone, $phone2, $status, $address_line1, $address_line2, $city_id, $customer_id);
 
     if ($updateStmt->execute()) {
         // Check if any rows were affected
@@ -298,17 +356,26 @@ try {
                 'name' => $name,
                 'email' => $email,
                 'phone' => $phone,
+                'phone2' => $phone2,
                 'status' => $status
             ];
             
             // Log success
-            error_log("Customer updated successfully - ID: $customer_id, Name: $name, Email: $email, Updated by User ID: $currentUserId");
+            error_log("Customer updated successfully - ID: $customer_id, Name: $name, Email: $email, Primary Phone: {$phone}, Secondary Phone: {$phone2}, Updated by User ID: $currentUserId");
         } else {
             // No changes were made (this should not happen since we checked above, but keep as fallback)
             $conn->commit();
             $response['success'] = true;
             $response['message'] = 'No changes were made to the customer.';
             $response['customer_id'] = $customer_id;
+            $response['data'] = [
+                'id' => $customer_id,
+                'name' => $name,
+                'email' => $email,
+                'phone' => $phone,
+                'phone2' => $phone2, 
+                'status' => $status
+            ];
         }
         
     } else {

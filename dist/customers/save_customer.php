@@ -100,6 +100,7 @@ try {
     $name = trim($_POST['name'] ?? '');
     $email = trim($_POST['email'] ?? '');
     $phone = trim($_POST['phone'] ?? '');
+    $phone2 = trim($_POST['phone2'] ?? '');
     $status = trim($_POST['status'] ?? 'Active');
     $address_line1 = trim($_POST['address_line1'] ?? '');
     $address_line2 = trim($_POST['address_line2'] ?? '');
@@ -118,7 +119,22 @@ try {
     }
     if (empty($phone)) {
         $errors['phone'] = 'Phone number is required';
+    } else {
+        // Validate primary phone format
+        if (!preg_match('/^(0|94|\+94)[0-9]{9}$/', $phone)) {
+            $errors['phone'] = 'Invalid primary phone number format. Please use 10 digits starting with 0, 94 or +94.';
+        }
     }
+
+    // Validate secondary phone format if provided
+    if (!empty($phone2)) {
+        if (!preg_match('/^(0|94|\+94)[0-9]{9}$/', $phone2)) {
+            $errors['phone2'] = 'Invalid secondary phone number format. Please use 10 digits starting with 0, 94 or +94.';
+        }
+    } else {
+        $phone2 = null; // Set to null if empty for database insertion
+    }
+
     if (empty($address_line1)) {
         $errors['address_line1'] = 'Address Line 1 is required';
     }
@@ -139,7 +155,7 @@ try {
         $emailCheckStmt->close();
     }
 
-    // Check for duplicate phone
+    // Check for duplicate primary phone
     if (!empty($phone)) {
         $phoneCheckStmt = $conn->prepare("SELECT customer_id FROM customers WHERE phone = ?");
         $phoneCheckStmt->bind_param("s", $phone);
@@ -147,12 +163,56 @@ try {
         $phoneCheckResult = $phoneCheckStmt->get_result();
         
         if ($phoneCheckResult->num_rows > 0) {
-            $errors['phone'] = 'Phone number already exists. Please use a different phone number.';
+            $errors['phone'] = 'Primary phone number already exists. Please use a different phone number.';
         }
         $phoneCheckStmt->close();
     }
 
-    // Validate city exists and is active
+    // Check if primary phone number exists as another customer's secondary number
+    if (!empty($phone)) { // Only check if primary phone is provided
+        $phoneCheckStmt = $conn->prepare("SELECT customer_id FROM customers WHERE phone2 = ?");
+        $phoneCheckStmt->bind_param("s", $phone);
+        $phoneCheckStmt->execute();
+        $phoneCheckResult = $phoneCheckStmt->get_result();
+        
+        if ($phoneCheckResult->num_rows > 0) {
+            $errors['phone'] = 'Primary phone number already exists. Please use a different phone number.';
+        }
+        $phoneCheckStmt->close();
+    }
+
+
+    // Check for duplicate secondary phone if provided and valid
+            if (!empty($phone2)) {
+                $phone2CheckStmt = $conn->prepare("SELECT customer_id FROM customers WHERE phone2 = ?");
+                $phone2CheckStmt->bind_param("s", $phone2);
+                $phone2CheckStmt->execute();
+                $phone2CheckResult = $phone2CheckStmt->get_result();
+    
+                if ($phone2CheckResult->num_rows > 0) {
+                    $errors['phone2'] = 'Secondary phone number already exists. Please use a different phone number.';
+                }
+                        $phone2CheckStmt->close();
+                    }
+                
+                    // Check if the secondary phone number is already used as a primary phone number
+                    if (!empty($phone2)) { // Only check if phone2 is provided
+                        $phone2AsPrimaryCheckStmt = $conn->prepare("SELECT customer_id FROM customers WHERE phone = ?");
+                        $phone2AsPrimaryCheckStmt->bind_param("s", $phone2);
+                        $phone2AsPrimaryCheckStmt->execute();
+                        $phone2AsPrimaryCheckResult = $phone2AsPrimaryCheckStmt->get_result();
+                        
+                        if ($phone2AsPrimaryCheckResult->num_rows > 0) {
+                            $errors['phone2'] = 'Secondary phone number already exists. Please use a different phone number.';
+                        }
+                        $phone2AsPrimaryCheckStmt->close();
+                    }
+                
+                    // NEW VALIDATION: Check if primary and secondary phone numbers are the same
+                    if (!empty($phone) && !empty($phone2) && $phone === $phone2) {
+                        $errors['phone2'] = 'Primary and secondary phone numbers cannot be the same.';
+                    }
+                    // Validate city exists and is active
     if ($city_id > 0) {
         $cityCheckStmt = $conn->prepare("SELECT city_id FROM city_table WHERE city_id = ? AND is_active = 1");
         $cityCheckStmt->bind_param("i", $city_id);
@@ -183,17 +243,17 @@ try {
 
     // Prepare and execute customer insert
     $insertStmt = $conn->prepare("
-        INSERT INTO customers (name, email, phone, status, address_line1, address_line2, city_id, created_at, updated_at) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+        INSERT INTO customers (name, email, phone, phone2, status, address_line1, address_line2, city_id, created_at, updated_at) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
     ");
 
-    $insertStmt->bind_param("ssssssi", $name, $email, $phone, $status, $address_line1, $address_line2, $city_id);
+    $insertStmt->bind_param("sssssssi", $name, $email, $phone, $phone2, $status, $address_line1, $address_line2, $city_id);
 
     if ($insertStmt->execute()) {
         $customer_id = $conn->insert_id;
         
         // Log customer creation action
-        $logDetails = "New customer added - Name: {$name}, Email: {$email}, Phone: {$phone}, Status: {$status}";
+        $logDetails = "New customer added - Name: {$name}, Email: {$email}, Primary Phone: {$phone}, Secondary Phone: {$phone2}, Status: {$status}";
         $logResult = logUserAction($conn, $currentUserId, 'customer_create', $customer_id, $logDetails);
         
         if (!$logResult) {
@@ -212,11 +272,12 @@ try {
             'name' => $name,
             'email' => $email,
             'phone' => $phone,
+            'phone2' => $phone2,
             'status' => $status
         ];
         
         // Log success
-        error_log("Customer added successfully - ID: $customer_id, Name: $name, Email: $email, Added by User ID: $currentUserId");
+        error_log("Customer added successfully - ID: $customer_id, Name: $name, Email: $email, Primary Phone: {$phone}, Secondary Phone: {$phone2}, Added by User ID: $currentUserId");
         
     } else {
         // Rollback transaction
@@ -231,10 +292,12 @@ try {
 
 } catch (Exception $e) {
     // Rollback transaction if it was started
+    // if (isset($conn) && $conn->inTransaction ?? false) {
+    //     $conn->rollback();
+    // }
     if ($conn->inTransaction ?? false) {
         $conn->rollback();
-    }
-    
+    }    
     // Log error
     error_log("Error adding customer: " . $e->getMessage());
     

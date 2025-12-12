@@ -37,7 +37,7 @@ $offset = ($page - 1) * $limit;
 $countSql = "SELECT COUNT(*) as total FROM customers c LEFT JOIN city_table ct ON c.city_id = ct.city_id";
 
 // Main query with city join
-$sql = "SELECT c.customer_id, c.name, c.email, c.phone, c.address_line1, c.address_line2, 
+$sql = "SELECT c.customer_id, c.name, c.email, c.phone, c.phone2, c.address_line1, c.address_line2, 
         c.city_id, ct.city_name, c.status, c.created_at, c.updated_at 
         FROM customers c
         LEFT JOIN city_table ct ON c.city_id = ct.city_id";
@@ -307,6 +307,7 @@ $cities = $city_result->fetch_all(MYSQLI_ASSOC);
                                                         data-customer-name="<?= htmlspecialchars($row['name']) ?>"
                                                         data-customer-email="<?= htmlspecialchars($row['email']) ?>"
                                                         data-customer-phone="<?= htmlspecialchars($row['phone']) ?>"
+                                        data-customer-secondary-phone="<?= htmlspecialchars($row['phone2'] ?? '') ?>"
                                                         data-customer-address1="<?= htmlspecialchars($row['address_line1']) ?>"
                                                         data-customer-address2="<?= htmlspecialchars($row['address_line2'] ?? '') ?>"
                                                         data-customer-city="<?= htmlspecialchars($row['city_id']) ?>"
@@ -403,6 +404,10 @@ $cities = $city_result->fetch_all(MYSQLI_ASSOC);
                     <span class="detail-value" id="modal-customer-phone"></span>
                 </div>
                 <div class="customer-detail-row">
+                    <span class="detail-label">Secondary Phone:</span>
+                    <span class="detail-value" id="modal-customer-secondary-phone"></span>
+                </div>
+                <div class="customer-detail-row">
                     <span class="detail-label">Address:</span>
                     <span class="detail-value">
                         <div class="address-display" id="modal-customer-address"></div>
@@ -483,6 +488,7 @@ $cities = $city_result->fetch_all(MYSQLI_ASSOC);
             const customerName = button.getAttribute('data-customer-name');
             const customerEmail = button.getAttribute('data-customer-email');
             const customerPhone = button.getAttribute('data-customer-phone');
+            const customerSecondaryPhone = button.getAttribute('data-customer-secondary-phone'); 
             const customerAddress1 = button.getAttribute('data-customer-address1');
             const customerAddress2 = button.getAttribute('data-customer-address2');
             const customerCity = button.getAttribute('data-customer-city');
@@ -497,6 +503,7 @@ $cities = $city_result->fetch_all(MYSQLI_ASSOC);
             document.getElementById('modal-customer-name').textContent = customerName;
             document.getElementById('modal-customer-email').textContent = customerEmail;
             document.getElementById('modal-customer-phone').textContent = customerPhone;
+            document.getElementById('modal-customer-secondary-phone').textContent = customerSecondaryPhone ? customerSecondaryPhone : 'N/A'; 
             
             // Build address display
             let addressDisplay = customerAddress1;
