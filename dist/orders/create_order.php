@@ -373,11 +373,11 @@ include($_SERVER['DOCUMENT_ROOT'] . '/OMS/dist/include/sidebar.php');
                                 </div>
                                 <div class="form-group">
                                     <label class="form-label">Phone</label>
-                                    <input type="text" class="form-control" name="customer_phone" id="customer_phone" placeholder="(07) xxxx xxxx">
+                                    <input type="tel" class="form-control" name="customer_phone" id="customer_phone" placeholder="(07) xxxx xxxx" maxlength="10" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
                                 </div>
                                 <div class="form-group">
                                     <label class="form-label">Secondary Phone <span style="font-size: 0.8em; color: #6c757d; font-weight: normal;">(Optional)</span></label>
-                                    <input type="text" class="form-control" name="customer_phone2" id="customer_phone2" placeholder="(07) xxxx xxxx (Optional)">
+                                    <input type="tel" class="form-control" name="customer_phone2" id="customer_phone2" placeholder="(07) xxxx xxxx (Optional)" maxlength="10" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
                                 </div>
                                 <div class="form-group">
                                     <label for="city_name_input" class="form-label">City</label>
