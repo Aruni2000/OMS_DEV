@@ -25,7 +25,7 @@ $show_payment_details = isset($_GET['show_payment']) && $_GET['show_payment'] ==
 // Updated query to include payment slip information
 $order_query = "SELECT i.*, i.pay_status AS order_pay_status, c.name as customer_name, 
                 CONCAT_WS(', ', c.address_line1, c.address_line2) as customer_address, 
-                c.email as customer_email, c.phone as customer_phone,
+                c.email as customer_email, c.phone as customer_phone,c.phone2 as customer_phone2,
                 ct.city_name as customer_city,
                 p.payment_id, p.amount_paid, p.payment_method, p.payment_date, p.pay_by,
                 r.name as paid_by_name, u.name as user_name,
@@ -457,9 +457,13 @@ $column_count = $has_any_discount ? 5 : 4;
                     <strong><?php echo htmlspecialchars($order['customer_name']); ?></strong><br>
                     <?php echo nl2br(htmlspecialchars($order['customer_address'])); ?><br>
                     Email: <?php echo htmlspecialchars($order['customer_email']); ?><br>
-                    Phone: <?php echo htmlspecialchars($order['customer_phone']); ?><br>
-                    City: <?php echo htmlspecialchars($order['customer_city']); ?>
-                    
+                    Phone: <?php 
+                                echo htmlspecialchars($order['customer_phone']);
+                                     if (!empty($order['customer_phone2'])) {
+                                            echo ' / ' . htmlspecialchars($order['customer_phone2']);
+                                }
+                            ?><br>
+                    City: <?php echo htmlspecialchars($order['customer_city']); ?>   
                 </div>
             </div>
         </div>

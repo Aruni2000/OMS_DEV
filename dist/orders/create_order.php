@@ -774,6 +774,19 @@ document.addEventListener('DOMContentLoaded', function() {
                 isValid = false;
             }
 
+            // Secondary phone cannot be the same as primary phone
+            const customerPhone2 = document.getElementById('customer_phone2').value.trim();
+            if (customerPhone2 !== '' && customerPhone === customerPhone2) {
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'validation-error';
+                errorDiv.style.color = '#dc3545';
+                errorDiv.style.fontSize = '0.875rem';
+                errorDiv.style.marginTop = '0.25rem';
+                errorDiv.textContent = 'Secondary phone cannot be the same as primary phone';
+                document.getElementById('customer_phone2').parentNode.appendChild(errorDiv);
+                isValid = false;
+            }
+
             // City validation (required for new customers)
             if (cityId === '') {
                 const errorDiv = document.createElement('div');
@@ -1502,6 +1515,19 @@ document.addEventListener('DOMContentLoaded', function() {
                 isValid = false;
             }
 
+            // Secondary phone cannot be the same as primary phone
+            const customerPhone2 = document.getElementById('customer_phone2').value.trim();
+            if (customerPhone2 !== '' && customerPhone === customerPhone2) {
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'validation-error';
+                errorDiv.style.color = '#dc3545';
+                errorDiv.style.fontSize = '0.875rem';
+                errorDiv.style.marginTop = '0.25rem';
+                errorDiv.textContent = 'Secondary phone cannot be the same as primary phone';
+                document.getElementById('customer_phone2').parentNode.appendChild(errorDiv);
+                isValid = false;
+            }
+
             if (cityId === '') {
                 const errorDiv = document.createElement('div');
                 errorDiv.className = 'validation-error';
@@ -1567,6 +1593,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('customer_name').addEventListener('input', validateFormAndToggleSubmit);
     document.getElementById('customer_email').addEventListener('input', validateFormAndToggleSubmit);
     document.getElementById('customer_phone').addEventListener('input', validateFormAndToggleSubmit);
+    document.getElementById('customer_phone2').addEventListener('input', validateFormAndToggleSubmit);
     document.getElementById('city_id').addEventListener('change', validateFormAndToggleSubmit);
     document.getElementById('address_line1').addEventListener('input', validateFormAndToggleSubmit);
     document.getElementById('address_line2').addEventListener('input', validateFormAndToggleSubmit);
