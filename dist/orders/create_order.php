@@ -992,12 +992,18 @@ document.addEventListener('DOMContentLoaded', function() {
             // Set flag and make fields readonly
             isExistingCustomer = true;
             toggleCustomerFields(true);
-            
+
+            // Reset email check state when an existing customer is selected
+            emailUniqueValid = true;
+            emailCheckInProgress = false;
+
             // Clear any existing validation errors
             document.querySelectorAll('.validation-error').forEach(el => el.remove());
-            
+
             customerModal.style.display = "none";
             alert('Customer selected: ' + row.getAttribute('data-name'));
+
+            validateFormAndToggleSubmit();
         });
     });
 
@@ -1076,22 +1082,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Call this function to add the clear button
     addClearSelectionButton();
 
-    // Real-time validation for email (only for new customers)
-    document.getElementById('customer_email').addEventListener('input', function() {
-        if (!isExistingCustomer) {
-            document.querySelectorAll('.validation-error').forEach(el => el.remove());
-            const email = this.value.trim();
-            if (email !== '' && !isValidEmail(email)) {
-                const errorDiv = document.createElement('div');
-                errorDiv.className = 'validation-error';
-                errorDiv.style.color = '#dc3545';
-                errorDiv.style.fontSize = '0.875rem';
-                errorDiv.style.marginTop = '0.25rem';
-                errorDiv.textContent = 'Invalid email format';
-                this.parentNode.appendChild(errorDiv);
-            }
-        }
-    });
+    
 
     // Real-time validation for phone (only for new customers)
     document.getElementById('customer_phone').addEventListener('input', function() {
@@ -1350,11 +1341,15 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
-document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function() {
     // Store the delivery fee value from PHP
     let deliveryFee = <?php echo $deliveryFee; ?>;
     let hasProducts = false;
     let isExistingCustomer = false;
+    // Email uniqueness state
+    let emailUniqueValid = true; // true = unique or empty, false = already used
+    let emailCheckInProgress = false; // true while AJAX check is pending
+    let emailDebounceTimer = null;
 
     // Function to validate all form fields and enable/disable submit button
     function validateFormAndToggleSubmit() {
@@ -1484,6 +1479,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // For new customers, all fields are required
         if (!isExistingCustomer) {
+            // Email is optional, but if present must be valid and unique
             if (customerEmail !== '' && !isValidEmail(customerEmail)) {
                 const errorDiv = document.createElement('div');
                 errorDiv.className = 'validation-error';
@@ -1491,6 +1487,24 @@ document.addEventListener('DOMContentLoaded', function() {
                 errorDiv.style.fontSize = '0.875rem';
                 errorDiv.style.marginTop = '0.25rem';
                 errorDiv.textContent = 'Invalid email format';
+                document.getElementById('customer_email').parentNode.appendChild(errorDiv);
+                isValid = false;
+            } else if (customerEmail !== '' && emailCheckInProgress) {
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'validation-error';
+                errorDiv.style.color = '#6c757d';
+                errorDiv.style.fontSize = '0.875rem';
+                errorDiv.style.marginTop = '0.25rem';
+                errorDiv.textContent = 'Checking email availability...';
+                document.getElementById('customer_email').parentNode.appendChild(errorDiv);
+                isValid = false;
+            } else if (customerEmail !== '' && !emailUniqueValid) {
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'validation-error';
+                errorDiv.style.color = '#dc3545';
+                errorDiv.style.fontSize = '0.875rem';
+                errorDiv.style.marginTop = '0.25rem';
+                errorDiv.textContent = 'Email already used';
                 document.getElementById('customer_email').parentNode.appendChild(errorDiv);
                 isValid = false;
             }
@@ -1741,8 +1755,84 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Add required indicators and initialize
     addRequiredIndicators();
+
+    // Email uniqueness checker (debounced)
+    function checkEmailUnique(email) {
+        if (!email) {
+            emailUniqueValid = true;
+            emailCheckInProgress = false;
+            validateFormAndToggleSubmit();
+            return;
+        }
+
+        emailCheckInProgress = true;
+        emailUniqueValid = false; // assume not unique until server responds
+        validateFormAndToggleSubmit();
+
+        fetch(`../customers/check_email.php?email=${encodeURIComponent(email)}`)
+            .then(response => response.json())
+            .then(data => {
+                emailCheckInProgress = false;
+                if (data && data.error === 'invalid_format') {
+                    emailUniqueValid = false;
+                } else {
+                    emailUniqueValid = !(data && data.exists === true);
+                }
+                validateFormAndToggleSubmit();
+            })
+            .catch(error => {
+                console.error('Email check failed:', error);
+                // On error, allow the form to proceed (fail-open) but mark check complete
+                emailCheckInProgress = false;
+                emailUniqueValid = true;
+                validateFormAndToggleSubmit();
+            });
+    }
+
+    // Debounced input listener for customer email
+    document.getElementById('customer_email').addEventListener('input', function() {
+        const email = this.value.trim();
+
+        if (isExistingCustomer) {
+            emailUniqueValid = true;
+            emailCheckInProgress = false;
+            validateFormAndToggleSubmit();
+            return;
+        }
+
+        // Remove only email-related previous validation messages
+        const parent = this.parentNode;
+        parent.querySelectorAll('.validation-error').forEach(el => {
+            const txt = el.textContent || '';
+            if (txt.includes('Invalid email') || txt.includes('Email already used') || txt.includes('Checking email')) {
+                el.remove();
+            }
+        });
+
+        if (email === '') {
+            emailUniqueValid = true;
+            emailCheckInProgress = false;
+            validateFormAndToggleSubmit();
+            return;
+        }
+
+        if (!isValidEmail(email)) {
+            emailUniqueValid = false;
+            emailCheckInProgress = false;
+            validateFormAndToggleSubmit();
+            return;
+        }
+
+        // Debounce server check
+        clearTimeout(emailDebounceTimer);
+        emailDebounceTimer = setTimeout(() => checkEmailUnique(email), 400);
+        // mark in progress while waiting
+        emailCheckInProgress = true;
+        validateFormAndToggleSubmit();
+    });
+
     validateFormAndToggleSubmit(); // Initial validation on page load
-    
+
     // Initialize: hide delivery fee row until products are added
     document.getElementById('delivery_fee_row').style.display = 'none';
     updateTotals();
