@@ -94,7 +94,7 @@ $countSql = "SELECT COUNT(*) as total FROM order_header i
             WHERE i.interface IN ('individual', 'leads') AND i.status NOT IN ('pending', 'cancel')$roleBasedCondition";
 
 // Main query with all required joins - Updated to use user_id instead of created_by
-$sql = "SELECT i.*, c.name as customer_name, 
+$sql = "SELECT i.*, COALESCE(NULLIF(i.full_name, ''), c.name) AS customer_display_name, c.name as customer_name,  
                p.payment_id, p.amount_paid, p.payment_method, p.payment_date, p.pay_by,
                u1.name as paid_by_name,
                u2.name as user_name,
@@ -115,7 +115,7 @@ if (!empty($search)) {
     $searchTerm = $conn->real_escape_string($search);
     $searchConditions[] = "(
                         i.order_id LIKE '%$searchTerm%' OR 
-                        c.name LIKE '%$searchTerm%' OR 
+                        i.full_name LIKE '%$searchTerm%' OR 
                         i.issue_date LIKE '%$searchTerm%' OR 
                         i.due_date LIKE '%$searchTerm%' OR 
                         i.total_amount LIKE '%$searchTerm%' OR
@@ -134,7 +134,7 @@ if (!empty($order_id_filter)) {
 // Specific Customer Name filter
 if (!empty($customer_name_filter)) {
     $customerNameTerm = $conn->real_escape_string($customer_name_filter);
-    $searchConditions[] = "c.name LIKE '%$customerNameTerm%'";
+    $searchConditions[] = "(i.full_name LIKE '%$customerNameTerm%')";
 }
 
 //Specific User ID filter - MODIFIED: Apply role-based restrictions
@@ -501,7 +501,7 @@ include($_SERVER['DOCUMENT_ROOT'] . '/OMS/dist/include/sidebar.php');
                                         <!-- Customer Name with ID -->
                                         <td class="customer-name">
                                             <?php
-                                            $customerName = isset($row['customer_name']) ? htmlspecialchars($row['customer_name']) : 'N/A';
+                                            $customerName = isset($row['customer_display_name']) ? htmlspecialchars($row['customer_display_name']) : (isset($row['customer_name']) ? htmlspecialchars($row['customer_name']) : 'N/A');
                                             $customerId = isset($row['customer_id']) ? htmlspecialchars($row['customer_id']) : '';
                                             echo $customerName . ($customerId ? " ($customerId)" : "");
                                             ?>

@@ -93,17 +93,17 @@ $countSql = "SELECT COUNT(*) as total FROM order_header i
             WHERE i.interface IN ('individual', 'leads')$roleBasedCondition";
 
 // Main query with all required joins - UPDATED to use user_id
-$sql = "SELECT i.*, c.name as customer_name, 
-               p.payment_id, p.amount_paid, p.payment_method, p.payment_date, p.pay_by,
-               u1.name as paid_by_name,
-               u2.name as user_name,
-               i.slip as payment_slip, i.pay_status as order_pay_status
-        FROM order_header i 
-        LEFT JOIN customers c ON i.customer_id = c.customer_id
-        LEFT JOIN payments p ON i.order_id = p.order_id
-        LEFT JOIN users u1 ON p.pay_by = u1.id
-        LEFT JOIN users u2 ON i.user_id = u2.id
-        WHERE i.interface IN ('individual', 'leads')$roleBasedCondition";
+$sql = "SELECT i.*, COALESCE(NULLIF(i.full_name, ''), c.name) AS customer_display_name, c.name as customer_name, 
+         p.payment_id, p.amount_paid, p.payment_method, p.payment_date, p.pay_by,
+         u1.name as paid_by_name,
+         u2.name as user_name,
+         i.slip as payment_slip, i.pay_status as order_pay_status
+     FROM order_header i 
+     LEFT JOIN customers c ON i.customer_id = c.customer_id
+     LEFT JOIN payments p ON i.order_id = p.order_id
+     LEFT JOIN users u1 ON p.pay_by = u1.id
+     LEFT JOIN users u2 ON i.user_id = u2.id
+     WHERE i.interface IN ('individual', 'leads')$roleBasedCondition";
 
 // Build search conditions
 $searchConditions = [];
@@ -113,7 +113,7 @@ if (!empty($search)) {
     $searchTerm = $conn->real_escape_string($search);
     $searchConditions[] = "(
                         i.order_id LIKE '%$searchTerm%' OR 
-                        c.name LIKE '%$searchTerm%' OR 
+                        i.full_name LIKE '%$searchTerm%' OR
                         i.issue_date LIKE '%$searchTerm%' OR 
                         i.due_date LIKE '%$searchTerm%' OR 
                         i.total_amount LIKE '%$searchTerm%' OR
@@ -132,7 +132,7 @@ if (!empty($order_id_filter)) {
 // Specific Customer Name filter
 if (!empty($customer_name_filter)) {
     $customerNameTerm = $conn->real_escape_string($customer_name_filter);
-    $searchConditions[] = "c.name LIKE '%$customerNameTerm%'";
+    $searchConditions[] = "(i.full_name LIKE '%$customerNameTerm%')";
 }
 
 // Tracking ID filter
@@ -409,7 +409,7 @@ include($_SERVER['DOCUMENT_ROOT'] . '/OMS/dist/include/sidebar.php');
                                         <!-- Customer Name with ID -->
                                         <td class="customer-name">
                                             <?php
-                                            $customerName = isset($row['customer_name']) ? htmlspecialchars($row['customer_name']) : 'N/A';
+                                            $customerName = isset($row['customer_display_name']) ? htmlspecialchars($row['customer_display_name']) : (isset($row['customer_name']) ? htmlspecialchars($row['customer_name']) : 'N/A');
                                             $customerId = isset($row['customer_id']) ? htmlspecialchars($row['customer_id']) : '';
                                             echo $customerName . ($customerId ? " ($customerId)" : "");
                                             ?>
