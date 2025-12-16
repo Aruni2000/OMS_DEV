@@ -184,21 +184,42 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             }
         }
         
+        // Flag to determine if we should update customer details
+        $should_update_customer = true;
+        
         // If no valid customer ID found, try lookup by Name and Email (if email provided)
         if ($customer_id === 0) {
             if (!empty($customer_email)) {
-                $checkCustomerSql = "SELECT customer_id, city_id, phone2 FROM customers WHERE name = ? AND email = ?";
+                // Priority 1: Check Email AND Phone (Strict Match)
+                // If both match, we assume it's the same person and we can update their details
+                $checkCustomerSql = "SELECT customer_id, city_id, phone2, address_line1, address_line2 FROM customers WHERE email = ? AND phone = ?";
                 $stmt = $conn->prepare($checkCustomerSql);
-                $stmt->bind_param("ss", $customer_name, $customer_email);
+                $stmt->bind_param("ss", $customer_email, $customer_phone);
+                $stmt->execute();
+                $result = $stmt->get_result();
+
+                // Priority 2: Fallback check by Email ONLY (if exact match failed)
+                // This prevents "Duplicate entry" errors if customer changed their phone but used same email
+                if ($result->num_rows === 0) {
+                    $checkEmailSql = "SELECT customer_id, city_id, phone2, address_line1, address_line2 FROM customers WHERE email = ?";
+                    $stmt = $conn->prepare($checkEmailSql);
+                    $stmt->bind_param("s", $customer_email);
+                    $stmt->execute();
+                    $result = $stmt->get_result();
+                    
+                    // If found by fallback (Email only), DO NOT update the customer record
+                    if ($result->num_rows > 0) {
+                        $should_update_customer = false;
+                    }
+                }
             } else {
                 // If no email, check by Name and Phone (since email is optional/null)
                 $checkCustomerSql = "SELECT customer_id, city_id, phone2 FROM customers WHERE name = ? AND phone = ?";
                 $stmt = $conn->prepare($checkCustomerSql);
                 $stmt->bind_param("ss", $customer_name, $customer_phone);
+                $stmt->execute();
+                $result = $stmt->get_result();
             }
-            
-            $stmt->execute();
-            $result = $stmt->get_result();
             
             if ($result->num_rows > 0) {
                 $customer = $result->fetch_assoc();
@@ -209,18 +230,20 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     $city_id = $customer['city_id'];
                 }
                 
-                // Update existing customer
-                $updateCustomerSql = "UPDATE customers SET 
-                                     phone = ?, 
-                                     phone2 = ?,
-                                     address_line1 = ?, 
-                                     address_line2 = ?, 
-                                     city_id = ?, 
-                                     status = 'Active' 
-                                     WHERE customer_id = ?";
-                $stmt = $conn->prepare($updateCustomerSql);
-                $stmt->bind_param("ssssii", $customer_phone, $customer_phone2, $address_line1, $address_line2, $city_id, $customer_id);
-                $stmt->execute();
+                // Update existing customer ONLY if it was a full match (or phone match)
+                if ($should_update_customer) {
+                    $updateCustomerSql = "UPDATE customers SET 
+                                         phone = ?, 
+                                         phone2 = ?,
+                                         address_line1 = ?, 
+                                         address_line2 = ?, 
+                                         city_id = ?, 
+                                         status = 'Active' 
+                                         WHERE customer_id = ?";
+                    $stmt = $conn->prepare($updateCustomerSql);
+                    $stmt->bind_param("ssssii", $customer_phone, $customer_phone2, $address_line1, $address_line2, $city_id, $customer_id);
+                    $stmt->execute();
+                }
             } else {
                 // Create new customer
                 // Convert empty email to NULL to prevent unique constraint violation
