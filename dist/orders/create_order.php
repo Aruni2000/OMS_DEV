@@ -901,57 +901,67 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Updated Totals Calculation Function with fix for delivery fee
     function updateTotals() {
-        let subtotal = 0;
-        let totalDiscount = 0;
+    let subtotal = 0;
+    let totalDiscount = 0;
 
-        document.querySelectorAll('#order_table tbody tr').forEach(function(row) {
-            let rowPrice = parseFloat(row.querySelector('.price').value) || 0;
-            let rowDiscount = parseFloat(row.querySelector('.discount').value) || 0;
-
-            // Ensure discount doesn't exceed price
-            if (rowDiscount > rowPrice) {
-                rowDiscount = rowPrice;
-                row.querySelector('.discount').value = rowDiscount;
-            }
-
-            let rowSubtotal = rowPrice - rowDiscount;
-            row.querySelector('.subtotal').value = rowSubtotal.toFixed(2);
-
-            subtotal += rowPrice;
-            totalDiscount += rowDiscount;
-        });
-
-        document.getElementById('subtotal_display').textContent = subtotal.toFixed(2);
-        document.getElementById('subtotal_amount').value = subtotal.toFixed(2);
-        document.getElementById('discount_display').textContent = totalDiscount.toFixed(2);
-        document.getElementById('discount_amount').value = totalDiscount.toFixed(2);
-
-        // Always check for products before calculating total
-        let hasAnyProducts = false;
-        document.querySelectorAll('#order_table tbody tr').forEach(function(row) {
-            const productSelect = row.querySelector('.product-select');
-            if (productSelect && productSelect.value !== "") {
-                hasAnyProducts = true;
-            }
-        });
-
-        // Calculate total including delivery fee if products are selected
-        let total = subtotal - totalDiscount;
-
-        // Add delivery fee if any products are selected
-        const deliveryFeeRow = document.getElementById('delivery_fee_row');
-        if (hasAnyProducts) {
-            total += deliveryFee;
-            deliveryFeeRow.style.display = 'flex';
-        } else {
-            deliveryFeeRow.style.display = 'none';
+    document.querySelectorAll('#order_table tbody tr').forEach(function(row) {
+        let rowPrice = parseFloat(row.querySelector('.price').value) || 0;
+        let rowDiscount = parseFloat(row.querySelector('.discount').value) || 0;
+        
+        if (rowDiscount > rowPrice) {
+            rowDiscount = rowPrice;
+            row.querySelector('.discount').value = rowDiscount;
         }
 
-        document.getElementById('total_display').textContent = total.toFixed(2);
-        document.getElementById('total_amount').value = total.toFixed(2);
-        document.getElementById('lkr_total_amount').value = total.toFixed(2);
+        let rowSubtotal = rowPrice - rowDiscount;
+        row.querySelector('.subtotal').value = rowSubtotal.toFixed(2);
+
+        subtotal += rowPrice;
+        totalDiscount += rowDiscount;
+    });
+
+    document.getElementById('subtotal_display').textContent = subtotal.toFixed(2);
+    document.getElementById('subtotal_amount').value = subtotal.toFixed(2);
+    document.getElementById('discount_display').textContent = totalDiscount.toFixed(2);
+    document.getElementById('discount_amount').value = totalDiscount.toFixed(2);
+    
+    let hasAnyProducts = false;
+    document.querySelectorAll('#order_table tbody tr').forEach(function(row) {
+        const productSelect = row.querySelector('.product-select');
+        if (productSelect && productSelect.value !== "") {
+            hasAnyProducts = true;
+        }
+    });
+
+    let totalWithoutDeliveryFee = subtotal - totalDiscount;
+
+    // Reset to base delivery fee first
+    let effectiveDeliveryFee = <?php echo $deliveryFee; ?>;
+    
+    // Check if total (without delivery fee) is 5000 or more
+    if (totalWithoutDeliveryFee >= 5000) {
+        effectiveDeliveryFee = 0;
     }
 
+    document.getElementById('delivery_fee_display').textContent = effectiveDeliveryFee.toFixed(2);
+    document.getElementById('delivery_fee').value = effectiveDeliveryFee.toFixed(2);
+
+    const deliveryFeeRow = document.getElementById('delivery_fee_row');
+    if (hasAnyProducts) {
+        // Calculate final total including delivery fee
+        let finalTotal = totalWithoutDeliveryFee + effectiveDeliveryFee;
+        deliveryFeeRow.style.display = 'flex';
+        
+        document.getElementById('total_display').textContent = finalTotal.toFixed(2);
+        document.getElementById('total_amount').value = finalTotal.toFixed(2);
+        document.getElementById('lkr_total_amount').value = finalTotal.toFixed(2);
+    } else {
+        deliveryFeeRow.style.display = 'none';
+        document.getElementById('total_display').textContent = '0.00';
+        document.getElementById('total_amount').value = '0.00';
+        document.getElementById('lkr_total_amount').value = '0.00';
+    }
+}
     // Customer modal functionality
     const customerModal = document.getElementById("customerModal");
     const selectCustomerBtn = document.getElementById("select_existing_customer");
@@ -1757,9 +1767,19 @@ document.addEventListener('DOMContentLoaded', function() {
 
         let total = subtotal - totalDiscount;
 
+        // IF total is 5000 or more, delivery fee is 0
+        let effectiveDeliveryFee = deliveryFee; // Use the base delivery fee
+
+        if (total >= 5000) { // Check if total is 5000 or more
+            effectiveDeliveryFee = 0; // Set delivery fee to 0
+        }
+
+        document.getElementById('delivery_fee_display').textContent = effectiveDeliveryFee.toFixed(2);
+        document.getElementById('delivery_fee').value = effectiveDeliveryFee.toFixed(2);
+
         const deliveryFeeRow = document.getElementById('delivery_fee_row');
         if (hasAnyProducts) {
-            total += deliveryFee;
+            total += effectiveDeliveryFee; // Add effective delivery fee
             deliveryFeeRow.style.display = 'flex';
         } else {
             deliveryFeeRow.style.display = 'none';
