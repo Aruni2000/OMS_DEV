@@ -244,7 +244,7 @@ include($_SERVER['DOCUMENT_ROOT'] . '/OMS/dist/include/sidebar.php');
 
                                 <div class="customer-form-group">
                                     <label for="phone2" class="form-label">
-                                        <i class="fas fa-phone"></i> Secondary Phone Number <span class="text-muted small fw-normal"> (Optional)</span>
+                                        <i class="fas fa-phone"></i> Phone 2 <span class="text-muted small fw-normal"> (Optional)</span>
                                     </label>
                                     <input type="tel" class="form-control" id="phone2" name="phone2"
                                         placeholder="0711234567">
@@ -355,6 +355,25 @@ include($_SERVER['DOCUMENT_ROOT'] . '/OMS/dist/include/sidebar.php');
                 } else {
                     // Scroll to first error
                     scrollToFirstError();
+
+                    // Check if phone number errors need prominent notification
+                    const phone1ErrorDiv = $('#phone-error');
+                    const phone2ErrorDiv = $('#phone2-error');
+                    let prominentNotificationNeeded = false;
+                    let notificationMessage = '';
+
+                    if (phone1ErrorDiv.is(':visible') && phone1ErrorDiv.text().includes('Please enter a valid Sri Lankan phone number')) {
+                        prominentNotificationNeeded = true;
+                        notificationMessage = phone1ErrorDiv.text();
+                    } else if (phone2ErrorDiv.is(':visible') && phone2ErrorDiv.text().includes('Please enter a valid Sri Lankan phone number')) {
+                        prominentNotificationNeeded = true;
+                        notificationMessage = phone2ErrorDiv.text();
+                    }
+                    // Add other specific phone validation error checks if needed
+
+                    if (prominentNotificationNeeded) {
+                        showErrorNotification(notificationMessage);
+                    }
                 }
             });
             
@@ -606,7 +625,7 @@ include($_SERVER['DOCUMENT_ROOT'] . '/OMS/dist/include/sidebar.php');
                 this.value = value;
             });
 
-            // Auto-format secondary phone number
+            // Auto-format Phone 2
             $('#phone2').on('input', function() {
                 let value = this.value.replace(/\D/g, '');
                 if (value.length > 10) {
@@ -651,21 +670,69 @@ include($_SERVER['DOCUMENT_ROOT'] . '/OMS/dist/include/sidebar.php');
             });
             
             $('#phone').on('blur', function() {
-                const validation = validatePhone($(this).val());
+                const $this = $(this);
+                const validation = validatePhone($this.val());
                 if (!validation.valid) {
                     showError('phone', validation.message);
                 } else {
+                    // First mark as valid locally
                     showSuccess('phone');
+
+                    // Check for uniqueness via AJAX
+                    const phoneVal = $this.val().trim();
+                    if (phoneVal !== '') {
+                        $.ajax({
+                            url: 'check_phone.php',
+                            type: 'GET',
+                            data: { phone: phoneVal },
+                            dataType: 'json',
+                            success: function(resp) {
+                                if (resp && resp.exists) {
+                                    showError('phone', 'Primary phone number already exists. Please use a different phone number');
+                                } else if (resp && resp.error === 'invalid_format') {
+                                    showError('phone', 'Please enter a valid phone number');
+                                } else {
+                                    showSuccess('phone');
+                                }
+                            },
+                            error: function() {
+                                // On error, keep local validation but do not block user
+                                // Optionally log error to console
+                                console.error('Error checking phone uniqueness');
+                            }
+                        });
+                    }
                 }
             });
 
             $('#phone2').on('blur', function() {
-                if ($(this).val().trim() !== '') {
-                    const validation = validatePhone2($(this).val());
+                const $this = $(this);
+                const val = $this.val().trim();
+                if (val !== '') {
+                    const validation = validatePhone2(val);
                     if (!validation.valid) {
                         showError('phone2', validation.message);
                     } else {
+                        // Locally valid — check server for duplicates (checks both phone and phone2)
                         showSuccess('phone2');
+                        $.ajax({
+                            url: 'check_phone.php',
+                            type: 'GET',
+                            data: { phone: val },
+                            dataType: 'json',
+                            success: function(resp) {
+                                if (resp && resp.exists) {
+                                    showError('phone2', 'Phone 2 already exists. Please use a different phone number');
+                                } else if (resp && resp.error === 'invalid_format') {
+                                    showError('phone2', 'Please enter a valid phone number');
+                                } else {
+                                    showSuccess('phone2');
+                                }
+                            },
+                            error: function() {
+                                console.error('Error checking Phone 2 uniqueness');
+                            }
+                        });
                     }
                 } else {
                     clearValidation('phone2');
@@ -763,13 +830,13 @@ include($_SERVER['DOCUMENT_ROOT'] . '/OMS/dist/include/sidebar.php');
                 return { valid: true, message: '' }; // Optional, so empty is valid
             }
             if (phone2.length > 20) {
-                return { valid: false, message: 'Secondary phone number is too long (maximum 20 characters)' };
+                return { valid: false, message: 'Phone 2 is too long (maximum 20 characters)' };
             }
             const cleanPhone = phone2.replace(/\s+/g, '');
             const digitsOnly = cleanPhone.replace(/[^0-9]/g, '');
             
             if (digitsOnly.length !== 10) {
-                return { valid: false, message: 'Secondary phone number must be exactly 10 digits' };
+                return { valid: false, message: 'Phone 2 must be exactly 10 digits' };
             }
             
             const localPattern = /^0[1-9][0-9]{8}$/;
@@ -915,7 +982,7 @@ include($_SERVER['DOCUMENT_ROOT'] . '/OMS/dist/include/sidebar.php');
                 }
             }
 
-            // Validate secondary phone if not empty
+            // Validate Phone 2 if not empty
             if (phone2.trim() !== '') {
                 const phone2Validation = validatePhone2(phone2);
                 if (!phone2Validation.valid) {

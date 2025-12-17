@@ -405,7 +405,7 @@ $cities = $city_result->fetch_all(MYSQLI_ASSOC);
                     <span class="detail-value" id="modal-customer-phone"></span>
                 </div>
                 <div class="customer-detail-row">
-                    <span class="detail-label">Secondary Phone:</span>
+                    <span class="detail-label">Phone 2:</span>
                     <span class="detail-value" id="modal-customer-secondary-phone"></span>
                 </div>
                 <div class="customer-detail-row">

@@ -158,10 +158,10 @@ try {
         }
     }
 
-    // Validate secondary phone format if provided
+    // Validate Phone 2 format if provided
     if (!empty($phone2)) {
         if (!preg_match('/^(0|94|\+94)[0-9]{9}$/', $phone2)) {
-            $errors['phone2'] = 'Invalid secondary phone number format. Please use 10 digits starting with 0, 94 or +94.';
+            $errors['phone2'] = 'Invalid Phone 2 format. Please use 10 digits starting with 0, 94 or +94.';
         }
     } else {
         $phone2 = null; // Set to null if empty for database update
@@ -213,8 +213,8 @@ try {
         $phoneCheckStmt->close();
     }
 
-    //Check if secondary phone number already exists for another customer
-    // This checks if the provided secondary phone number (phone2) exists as either a primary (phone)
+    //Check if Phone 2 already exists for another customer
+    // This checks if the provided Phone 2 (phone2) exists as either a primary (phone)
     // or secondary (phone2) number for any other customer in the database.
     if (!empty($phone2)) {
         $phone2CheckStmt = $conn->prepare("SELECT customer_id FROM customers WHERE (phone = ? OR phone2 = ?) AND customer_id != ?");
@@ -224,14 +224,14 @@ try {
         $phone2CheckResult = $phone2CheckStmt->get_result();
 
         if ($phone2CheckResult->num_rows > 0) {
-            $errors['phone2'] = 'Secondary phone number already exists. Please use a different phone number.';
+            $errors['phone2'] = 'Phone 2 already exists. Please use a different phone number.';
         }
         $phone2CheckStmt->close();
     }
 
-    // Check if primary and secondary phone numbers are the same
+    // Check if primary and Phone 2s are the same
     if (!empty($phone) && !empty($phone2) && $phone === $phone2) {
-        $errors['phone2'] = 'Primary and secondary phone numbers cannot be the same.';
+        $errors['phone2'] = 'Primary and Phone 2s cannot be the same.';
     }
 
 
@@ -280,7 +280,7 @@ try {
     // Check for changes in phone2
     if ($phone2 !== $existingCustomer['phone2']) {
         $hasChanges = true;
-        $changes[] = "Secondary Phone: '" . ($existingCustomer['phone2'] ?? 'NULL') . "' → '" . ($phone2 ?? 'NULL') . "'";
+        $changes[] = "Phone 2: '" . ($existingCustomer['phone2'] ?? 'NULL') . "' → '" . ($phone2 ?? 'NULL') . "'";
     }
     if ($status !== $existingCustomer['status']) {
         $hasChanges = true;
@@ -361,7 +361,7 @@ try {
             ];
             
             // Log success
-            error_log("Customer updated successfully - ID: $customer_id, Name: $name, Email: $email, Primary Phone: {$phone}, Secondary Phone: {$phone2}, Updated by User ID: $currentUserId");
+            error_log("Customer updated successfully - ID: $customer_id, Name: $name, Email: $email, Primary Phone: {$phone}, Phone 2: {$phone2}, Updated by User ID: $currentUserId");
         } else {
             // No changes were made (this should not happen since we checked above, but keep as fallback)
             $conn->commit();

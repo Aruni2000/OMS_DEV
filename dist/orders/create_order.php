@@ -376,7 +376,7 @@ include($_SERVER['DOCUMENT_ROOT'] . '/OMS/dist/include/sidebar.php');
                                     <input type="tel" class="form-control" name="customer_phone" id="customer_phone" placeholder="(07) xxxx xxxx" maxlength="10" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
                                 </div>
                                 <div class="form-group">
-                                    <label class="form-label">Secondary Phone <span style="font-size: 0.8em; color: #6c757d; font-weight: normal;">(Optional)</span></label>
+                                    <label class="form-label">Phone 2 <span style="font-size: 0.8em; color: #6c757d; font-weight: normal;">(Optional)</span></label>
                                     <input type="tel" class="form-control" name="customer_phone2" id="customer_phone2" placeholder="(07) xxxx xxxx (Optional)" maxlength="10" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
                                 </div>
                                 <div class="form-group">
@@ -662,10 +662,9 @@ document.addEventListener('DOMContentLoaded', function() {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         return emailRegex.test(email);
     }
-
-    // Phone number validation function (10 digits)
+    // Phone number validation function (10 digits and start with 0)
     function isValidPhoneNumber(phone) {
-        const phoneRegex = /^\d{10}$/;
+        const phoneRegex = /^0\d{9}$/;
         return phoneRegex.test(phone);
     }
 
@@ -769,20 +768,29 @@ document.addEventListener('DOMContentLoaded', function() {
                 errorDiv.style.color = '#dc3545';
                 errorDiv.style.fontSize = '0.875rem';
                 errorDiv.style.marginTop = '0.25rem';
-                errorDiv.textContent = 'Phone number must be 10 digits';
+                errorDiv.textContent = 'Phone number must start with 0 and be 10 digits long';
                 document.getElementById('customer_phone').parentNode.appendChild(errorDiv);
                 isValid = false;
             }
 
-            // Secondary phone cannot be the same as primary phone
+            // Phone 2 cannot be the same as primary phone
             const customerPhone2 = document.getElementById('customer_phone2').value.trim();
-            if (customerPhone2 !== '' && customerPhone === customerPhone2) {
+            if (customerPhone2 !== '' && !isValidPhoneNumber(customerPhone2)) { // Added new validation
                 const errorDiv = document.createElement('div');
                 errorDiv.className = 'validation-error';
                 errorDiv.style.color = '#dc3545';
                 errorDiv.style.fontSize = '0.875rem';
                 errorDiv.style.marginTop = '0.25rem';
-                errorDiv.textContent = 'Secondary phone cannot be the same as primary phone';
+                errorDiv.textContent = 'Phone 2 must start with 0 and be 10 digits long'; // New error message
+                document.getElementById('customer_phone2').parentNode.appendChild(errorDiv);
+                isValid = false;
+            } else if (customerPhone2 !== '' && customerPhone === customerPhone2) {
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'validation-error';
+                errorDiv.style.color = '#dc3545';
+                errorDiv.style.fontSize = '0.875rem';
+                errorDiv.style.marginTop = '0.25rem';
+                errorDiv.textContent = 'Phone 2 cannot be the same as primary phone';
                 document.getElementById('customer_phone2').parentNode.appendChild(errorDiv);
                 isValid = false;
             }
@@ -1095,7 +1103,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 errorDiv.style.color = '#dc3545';
                 errorDiv.style.fontSize = '0.875rem';
                 errorDiv.style.marginTop = '0.25rem';
-                errorDiv.textContent = 'Phone number must be 10 digits';
+                errorDiv.textContent = 'Phone number must start with 0 and be 10 digits long';
                 this.parentNode.appendChild(errorDiv);
             }
         }
@@ -1524,20 +1532,29 @@ document.addEventListener('DOMContentLoaded', function() {
                 errorDiv.style.color = '#dc3545';
                 errorDiv.style.fontSize = '0.875rem';
                 errorDiv.style.marginTop = '0.25rem';
-                errorDiv.textContent = 'Phone number must be 10 digits';
+                errorDiv.textContent = 'Phone number must start with 0 and be 10 digits long';
                 document.getElementById('customer_phone').parentNode.appendChild(errorDiv);
                 isValid = false;
             }
 
-            // Secondary phone cannot be the same as primary phone
+            // Phone 2 cannot be the same as primary phone
             const customerPhone2 = document.getElementById('customer_phone2').value.trim();
-            if (customerPhone2 !== '' && customerPhone === customerPhone2) {
+            if (customerPhone2 !== '' && !isValidPhoneNumber(customerPhone2)) { // Added new validation
                 const errorDiv = document.createElement('div');
                 errorDiv.className = 'validation-error';
                 errorDiv.style.color = '#dc3545';
                 errorDiv.style.fontSize = '0.875rem';
                 errorDiv.style.marginTop = '0.25rem';
-                errorDiv.textContent = 'Secondary phone cannot be the same as primary phone';
+                errorDiv.textContent = 'Phone 2 must start with 0 and be 10 digits long'; // New error message
+                document.getElementById('customer_phone2').parentNode.appendChild(errorDiv);
+                isValid = false;
+            } else if (customerPhone2 !== '' && customerPhone === customerPhone2) {
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'validation-error';
+                errorDiv.style.color = '#dc3545';
+                errorDiv.style.fontSize = '0.875rem';
+                errorDiv.style.marginTop = '0.25rem';
+                errorDiv.textContent = 'Phone 2 cannot be the same as primary phone';
                 document.getElementById('customer_phone2').parentNode.appendChild(errorDiv);
                 isValid = false;
             }
@@ -1575,7 +1592,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function isValidPhoneNumber(phone) {
-        const phoneRegex = /^\d{10}$/;
+        const phoneRegex = /^0\d{9}$/;
         return phoneRegex.test(phone);
     }
 

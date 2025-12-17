@@ -126,10 +126,10 @@ try {
         }
     }
 
-    // Validate secondary phone format if provided
+    // Validate Phone 2 format if provided
     if (!empty($phone2)) {
         if (!preg_match('/^(0|94|\+94)[0-9]{9}$/', $phone2)) {
-            $errors['phone2'] = 'Invalid secondary phone number format. Please use 10 digits starting with 0, 94 or +94.';
+            $errors['phone2'] = 'Invalid Phone 2 format. Please use 10 digits starting with 0, 94 or +94.';
         }
     } else {
         $phone2 = null; // Set to null if empty for database insertion
@@ -182,7 +182,7 @@ try {
     }
 
 
-    // Check for duplicate secondary phone if provided and valid
+    // Check for duplicate Phone 2 if provided and valid
             if (!empty($phone2)) {
                 $phone2CheckStmt = $conn->prepare("SELECT customer_id FROM customers WHERE phone2 = ?");
                 $phone2CheckStmt->bind_param("s", $phone2);
@@ -190,12 +190,12 @@ try {
                 $phone2CheckResult = $phone2CheckStmt->get_result();
     
                 if ($phone2CheckResult->num_rows > 0) {
-                    $errors['phone2'] = 'Secondary phone number already exists. Please use a different phone number.';
+                    $errors['phone2'] = 'Phone 2 already exists. Please use a different phone number.';
                 }
                         $phone2CheckStmt->close();
                     }
                 
-                    // Check if the secondary phone number is already used as a primary phone number
+                    // Check if the Phone 2 is already used as a primary phone number
                     if (!empty($phone2)) { // Only check if phone2 is provided
                         $phone2AsPrimaryCheckStmt = $conn->prepare("SELECT customer_id FROM customers WHERE phone = ?");
                         $phone2AsPrimaryCheckStmt->bind_param("s", $phone2);
@@ -203,14 +203,14 @@ try {
                         $phone2AsPrimaryCheckResult = $phone2AsPrimaryCheckStmt->get_result();
                         
                         if ($phone2AsPrimaryCheckResult->num_rows > 0) {
-                            $errors['phone2'] = 'Secondary phone number already exists. Please use a different phone number.';
+                            $errors['phone2'] = 'Phone 2 already exists. Please use a different phone number.';
                         }
                         $phone2AsPrimaryCheckStmt->close();
                     }
                 
-                    // NEW VALIDATION: Check if primary and secondary phone numbers are the same
+                    // NEW VALIDATION: Check if primary and Phone 2s are the same
                     if (!empty($phone) && !empty($phone2) && $phone === $phone2) {
-                        $errors['phone2'] = 'Primary and secondary phone numbers cannot be the same.';
+                        $errors['phone2'] = 'Primary and Phone 2s cannot be the same.';
                     }
                     // Validate city exists and is active
     if ($city_id > 0) {
@@ -253,7 +253,7 @@ try {
         $customer_id = $conn->insert_id;
         
         // Log customer creation action
-        $logDetails = "New customer added - Name: {$name}, Email: {$email}, Primary Phone: {$phone}, Secondary Phone: {$phone2}, Status: {$status}";
+        $logDetails = "New customer added - Name: {$name}, Email: {$email}, Primary Phone: {$phone}, Phone 2: {$phone2}, Status: {$status}";
         $logResult = logUserAction($conn, $currentUserId, 'customer_create', $customer_id, $logDetails);
         
         if (!$logResult) {
@@ -277,7 +277,7 @@ try {
         ];
         
         // Log success
-        error_log("Customer added successfully - ID: $customer_id, Name: $name, Email: $email, Primary Phone: {$phone}, Secondary Phone: {$phone2}, Added by User ID: $currentUserId");
+        error_log("Customer added successfully - ID: $customer_id, Name: $name, Email: $email, Primary Phone: {$phone}, Phone 2: {$phone2}, Added by User ID: $currentUserId");
         
     } else {
         // Rollback transaction
