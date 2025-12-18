@@ -113,7 +113,7 @@ if (!empty($searchConditions)) {
 }
 
 // Add ordering and pagination
-$sql .= " ORDER BY c.created_at DESC LIMIT $limit OFFSET $offset";
+$sql .= " ORDER BY c.customer_id DESC LIMIT $limit OFFSET $offset";
 
 // Execute queries
 $countResult = $conn->query($countSql);

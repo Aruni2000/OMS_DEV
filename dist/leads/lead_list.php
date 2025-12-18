@@ -67,15 +67,16 @@ $sql = "SELECT i.order_id,
                i.created_at,
                i.updated_at,
                i.notes,
-               i.mobile,
-               i.full_name,
-               i.address_line1,
-               i.address_line2,
-               c.name as customer_name, 
-               c.phone as customer_phone,
-               c.email as customer_email,
-               u.id as user_id,
-               u.name as user_name,
+                              i.mobile as customer_primary_phone,
+                              i.mobile2 as customer_phone2,
+                              i.full_name as order_full_name,
+                              i.address_line1,
+                              i.address_line2,
+                              i.email as order_email,
+                              c.name as customer_name,
+                              c.phone as customer_phone,
+                              c.email as customer_email,
+                              u.id as user_id,               u.name as user_name,
                u.email as user_email,
                u.status as user_status
         FROM order_header i 
@@ -119,7 +120,7 @@ if (!empty($customer_name_filter)) {
 // Phone filter - Enhanced to search both customer phone and mobile field
 if (!empty($phone_filter)) {
     $phoneTerm = $conn->real_escape_string($phone_filter);
-    $searchConditions[] = "(c.phone LIKE '%$phoneTerm%' OR i.mobile LIKE '%$phoneTerm%')";
+    $searchConditions[] = "(c.phone LIKE '%$phoneTerm%' OR i.mobile LIKE '%$phoneTerm%' OR i.mobile2 LIKE '%$phoneTerm%')";
 }
 
 // Simple User filter - Shows only leads assigned to selected user
@@ -408,36 +409,36 @@ include($_SERVER['DOCUMENT_ROOT'] . '/OMS/dist/include/sidebar.php');
                                             <?php echo isset($row['order_id']) ? htmlspecialchars($row['order_id']) : ''; ?>
                                         </td>
                                         
-                                        <!-- Customer Name - Enhanced to show both customer table name and order full_name -->
-                                        <td class="customer-name">
-                                            <?php 
-                                            $customerName = '';
-                                            if (!empty($row['customer_name'])) {
-                                                $customerName = $row['customer_name'];
-                                            } elseif (!empty($row['full_name'])) {
-                                                $customerName = $row['full_name'];
-                                            } else {
-                                                $customerName = 'N/A';
-                                            }
-                                            echo htmlspecialchars($customerName);
-                                            ?>
-                                        </td>
+                                                                                <!-- Customer Name - Prioritize order_header full_name -->
+                                                                                <td class="customer-name">
+                                                                                    <?php
+                                                                                    $customerName = 'N/A';
+                                                                                    if (!empty($row['order_full_name'])) {
+                                                                                        $customerName = $row['order_full_name'];
+                                                                                    } elseif (!empty($row['customer_name'])) {
+                                                                                        $customerName = $row['customer_name'];
+                                                                                    }
+                                                                                    echo htmlspecialchars($customerName);
+                                                                                    ?>
+                                                                                </td>
                                         
-                                        <!-- Phone Number - Enhanced to show both customer phone and mobile -->
-                                        <td class="phone-number">
-                                            <?php 
-                                            $phoneNumber = '';
-                                            if (!empty($row['customer_phone'])) {
-                                                $phoneNumber = $row['customer_phone'];
-                                            } elseif (!empty($row['mobile'])) {
-                                                $phoneNumber = $row['mobile'];
-                                            } else {
-                                                $phoneNumber = 'N/A';
-                                            }
-                                            echo htmlspecialchars($phoneNumber);
-                                            ?>
-                                        </td>
-                                       
+                                                                                <!-- Phone Number - Prioritize order_header mobile -->
+                                                                                <td class="phone-number">
+                                                                                    <?php
+                                                                                    $displayPhoneNumber = 'N/A';
+                                                                                    if (!empty($row['customer_primary_phone'])) {
+                                                                                        $displayPhoneNumber = $row['customer_primary_phone'];
+                                                                                    } elseif (!empty($row['customer_phone'])) { // Fallback to customer table phone if order_header mobile is empty
+                                                                                        $displayPhoneNumber = $row['customer_phone'];
+                                                                                    }
+                                                                                    
+                                                                                    echo htmlspecialchars($displayPhoneNumber);
+                                                                                    
+                                                                                    if (!empty($row['customer_phone2'])) {
+                                                                                        echo ' / ' . htmlspecialchars($row['customer_phone2']);
+                                                                                    }
+                                                                                    ?>
+                                                                                </td>                                       
                                         <!-- Total Amount with Currency -->
                                         <td class="amount">
                                             <?php

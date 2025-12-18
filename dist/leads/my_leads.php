@@ -57,10 +57,10 @@ $countSql = "SELECT COUNT(*) as total FROM order_header i
 
 // Main query with all required joins - FILTERED BY LOGGED USER
 $sql = "SELECT i.*, 
-               c.name as customer_name, 
-               c.phone as customer_phone,
-               u.id as user_id,
-               u.name as user_name,
+                              i.full_name as customer_name,
+                              i.mobile as customer_phone,
+                              i.mobile2 as customer_phone2,
+                              u.id as user_id,               u.name as user_name,
                u.email as user_email,
                i.pay_status as order_pay_status,
                i.created_at,
@@ -96,13 +96,13 @@ if (!empty($order_id_filter)) {
 // Specific Customer Name filter
 if (!empty($customer_name_filter)) {
     $customerNameTerm = $conn->real_escape_string($customer_name_filter);
-    $searchConditions[] = "c.name LIKE '%$customerNameTerm%'";
+    $searchConditions[] = "(c.name LIKE '%$customerNameTerm%' OR i.full_name LIKE '%$customerNameTerm%')";
 }
 
 // Phone filter
 if (!empty($phone_filter)) {
     $phoneTerm = $conn->real_escape_string($phone_filter);
-    $searchConditions[] = "c.phone LIKE '%$phoneTerm%'";
+    $searchConditions[] = "(c.phone LIKE '%$phoneTerm%' OR i.mobile LIKE '%$phoneTerm%' OR i.mobile2 LIKE '%$phoneTerm%')";
 }
 
 // Date range filter
@@ -358,7 +358,12 @@ include($_SERVER['DOCUMENT_ROOT'] . '/OMS/dist/include/sidebar.php');
                                         
                                         <!-- Phone Number -->
                                         <td class="phone-number">
-                                            <?php echo isset($row['customer_phone']) ? htmlspecialchars($row['customer_phone']) : 'N/A'; ?>
+                                            <?php 
+                                            echo isset($row['customer_phone']) ? htmlspecialchars($row['customer_phone']) : 'N/A';
+                                            if (!empty($row['customer_phone2'])) {
+                                                echo ' / ' . htmlspecialchars($row['customer_phone2']);
+                                            }
+                                            ?>
                                         </td>
                                        
                                         <!-- Total Amount with Currency -->

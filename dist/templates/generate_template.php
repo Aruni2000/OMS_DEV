@@ -17,7 +17,8 @@ header('Expires: 0');
 // Define CSV columns - Updated to match order_header table structure
 $header = [
     'Full Name',
-    'Phone Number', 
+    'Phone Number',
+    'Phone Number 2', 
     'City',
     'Email',
     'Address Line 1',

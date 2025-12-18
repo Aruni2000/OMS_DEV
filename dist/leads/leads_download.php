@@ -24,16 +24,15 @@ $order_id = $_GET['id'];
 $show_payment_details = isset($_GET['show_payment']) && $_GET['show_payment'] === 'true';
 
 // Query specifically for leads orders - updated to match leads_list.php structure
-$order_query = "SELECT i.*, i.pay_status AS order_pay_status, c.name as customer_name, 
-                CONCAT_WS(', ', c.address_line1, c.address_line2) as customer_address, 
-                c.email as customer_email, c.phone as customer_phone,
-                p.payment_id, p.amount_paid, p.payment_method, p.payment_date, p.pay_by,
-                r.name as paid_by_name, u.name as user_name,
-                i.delivery_fee, u2.name as creator_name
-                FROM order_header i 
-                LEFT JOIN customers c ON i.customer_id = c.customer_id
-                LEFT JOIN payments p ON i.order_id = p.order_id
-                LEFT JOIN roles r ON p.pay_by = r.id
+$order_query = "SELECT i.*, i.pay_status AS order_pay_status, i.mobile as customer_phone, i.mobile2 as customer_phone2, 
+                                p.payment_id, p.amount_paid, p.payment_method, p.payment_date, p.pay_by,
+                                r.name as paid_by_name, u.name as user_name,
+                                i.delivery_fee, u2.name as creator_name,
+                                ct.city_name as customer_city
+                                FROM order_header i
+                                LEFT JOIN customers c ON i.customer_id = c.customer_id
+                                LEFT JOIN city_table ct ON i.city_id = ct.city_id
+                                LEFT JOIN payments p ON i.order_id = p.order_id                LEFT JOIN roles r ON p.pay_by = r.id
                 LEFT JOIN users u ON i.user_id = u.id
                 LEFT JOIN users u2 ON i.created_by = u2.id
                 WHERE i.order_id = ? AND i.interface = 'leads'
@@ -270,19 +269,30 @@ $column_count = $has_any_discount ? 5 : 4;
             <div class="billing-block">
                 <div class="billing-title">Billing To :</div>
                 <div class="billing-info">
-                    <strong><?php echo htmlspecialchars($order['customer_name']); ?></strong>
+                    <strong><?php echo htmlspecialchars($order['full_name']); ?></strong>
                     <?php if (!empty($order['customer_id'])): ?>
                         <span style="color: #666; font-size: 0.9em;">(ID: <?php echo htmlspecialchars($order['customer_id']); ?>)</span>
                     <?php endif; ?>
                     <br>
-                    <?php if (!empty($order['customer_address'])): ?>
-                        <?php echo nl2br(htmlspecialchars($order['customer_address'])); ?><br>
+                    <?php
+                        $address_parts = [];
+                        if (!empty($order['address_line1'])) $address_parts[] = $order['address_line1'];
+                        if (!empty($order['address_line2'])) $address_parts[] = $order['address_line2'];
+                        if (!empty($order['customer_city'])) $address_parts[] = $order['customer_city']; // Using the aliased city_name
+                    ?>
+                    <?php if (!empty($address_parts)): ?>
+                        <?php echo nl2br(htmlspecialchars(implode(', ', $address_parts))); ?><br>
                     <?php endif; ?>
-                    <?php if (!empty($order['customer_email'])): ?>
-                        Email: <?php echo htmlspecialchars($order['customer_email']); ?><br>
+                    <?php if (!empty($order['email']) && $order['email'] !== '-'): ?>
+                        Email: <?php echo htmlspecialchars($order['email']); ?><br>
                     <?php endif; ?>
                     <?php if (!empty($order['customer_phone'])): ?>
-                        Phone: <?php echo htmlspecialchars($order['customer_phone']); ?>
+                        Phone: <?php 
+                                    echo htmlspecialchars($order['customer_phone']);
+                                        if (!empty($order['customer_phone2'])) {
+                                                echo ' / ' . htmlspecialchars($order['customer_phone2']);
+                                    }
+                                ?><br>
                     <?php endif; ?>
                 </div>
             </div>

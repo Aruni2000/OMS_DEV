@@ -97,7 +97,7 @@ if ($_POST && isset($_FILES['csv_file']) && isset($_POST['users'])) {
         
         // Expected headers (case-insensitive)
         $expectedHeaders = [
-            'Full Name', 'Phone Number', 'City', 'Email', 'Address Line 1', 
+            'Full Name', 'Phone Number', 'Phone Number 2', 'City', 'Email', 'Address Line 1', 
             'Address Line 2', 'Product Code', 'Total Amount', 'Other'
         ];
         
@@ -132,23 +132,39 @@ if ($_POST && isset($_FILES['csv_file']) && isset($_POST['users'])) {
                 
                 // Map CSV columns to variables
                 $fullName = trim($row[0]);
-                $phoneNumber = trim($row[1]);
-                $city = trim($row[2]);
-                $email = trim($row[3]);
-                $addressLine1 = trim($row[4]);
-                $addressLine2 = trim($row[5]);
-                $productCode = trim($row[6]);
-                $totalAmount = trim($row[7]);
-                $other = trim($row[8]);
-                
-                // Handle email - normalize empty values
-                // Check for truly empty email values (empty string, null, whitespace, or common empty indicators)
-                if (empty($email) || $email === '' || $email === 'NULL' || $email === 'null' || $email === 'N/A' || $email === 'n/a' || $email === '-') {
-                    $email = '';
-                    $emailForDb = '-'; // Use dash for database storage
-                } else {
-                    $emailForDb = $email;
-                }
+$phoneNumber = trim($row[1]);
+$phoneNumber2 = trim($row[2]); // NEW: Phone Number 2
+$city = trim($row[3]);
+$email = trim($row[4]);
+$addressLine1 = trim($row[5]);
+$addressLine2 = trim($row[6]);
+$productCode = trim($row[7]);
+$totalAmount = trim($row[8]);
+$other = trim($row[9]);
+
+// NEW: Add leading zero to phone number if it doesn't start with 0
+// Remove any existing leading zeros first to avoid duplication
+$phoneNumber = ltrim($phoneNumber, '0');
+// Add leading zero
+$phoneNumber = '0' . $phoneNumber;
+
+// NEW: Add leading zero to phone number 2 if it doesn't start with 0 (optional field)
+if (!empty($phoneNumber2)) {
+    // Remove any existing leading zeros first to avoid duplication
+    $phoneNumber2 = ltrim($phoneNumber2, '0');
+    // Add leading zero
+    $phoneNumber2 = '0' . $phoneNumber2;
+} else {
+    $phoneNumber2 = null; // Store as null if empty
+}
+
+// Handle email - normalize empty values
+// Check for truly empty email values (empty string, null, whitespace, or common empty indicators)
+if (empty($email) || $email === '' || $email === 'NULL' || $email === 'null' || $email === 'N/A' || $email === 'n/a' || $email === '-') {
+    $emailForDb = null; // Use null for database storage
+} else {
+    $emailForDb = $email;
+}
                 
                 // Debug: Add some error context for troubleshooting
                 $emailDebugInfo = "Email value: '" . $email . "' (length: " . strlen($email) . ")";
@@ -180,6 +196,23 @@ if ($_POST && isset($_FILES['csv_file']) && isset($_POST['users'])) {
                 // Validate phone number format (allow numbers, spaces, +, -, ())
                 if (!preg_match('/^[0-9\s\+\-\(\)]+$/', $phoneNumber)) {
                     throw new Exception("Invalid phone number format");
+                }
+                // Validate phone number length (should be 10 digits after cleaning)
+                $cleanedPhoneNumber = preg_replace('/[^0-9]/', '', $phoneNumber);
+                if (strlen($cleanedPhoneNumber) !== 10) {
+                    throw new Exception("Phone number must be 10 digits long");
+                }
+                
+                // Validate phone number 2 format (allow numbers, spaces, +, -, ()) if provided
+                if (!empty($phoneNumber2) && $phoneNumber2 !== null) {
+                    if (!preg_match('/^[0-9\s\+\-\(\)]+$/', $phoneNumber2)) {
+                        throw new Exception("Invalid phone number 2 format");
+                    }
+                    // Validate phone number 2 length (should be 10 digits after cleaning)
+                    $cleanedPhoneNumber2 = preg_replace('/[^0-9]/', '', $phoneNumber2);
+                    if (strlen($cleanedPhoneNumber2) !== 10) {
+                        throw new Exception("Phone number 2 must be 10 digits long");
+                    }
                 }
                 
                 // Validate total amount is numeric and positive (MODIFIED - removed price matching validation)
@@ -229,14 +262,14 @@ if ($_POST && isset($_FILES['csv_file']) && isset($_POST['users'])) {
                 }
                 $cityStmt->close();
                 
-                // MODIFIED: Check if customer exists by phone number only and update if found
-                $customerSql = "SELECT customer_id, name, email, phone, address_line1, address_line2, city_id 
-                               FROM customers WHERE phone = ?";
+                // MODIFIED: Check if customer exists by phone number or phone2 and update if found
+                $customerSql = "SELECT customer_id, name, email, phone, phone2, address_line1, address_line2, city_id 
+                               FROM customers WHERE phone = ? OR phone2 = ? OR phone = ? OR phone2 = ?";
                 $customerStmt = $conn->prepare($customerSql);
                 if (!$customerStmt) {
                     throw new Exception("Failed to prepare customer query: " . $conn->error);
                 }
-                $customerStmt->bind_param("s", $phoneNumber);
+                $customerStmt->bind_param("ssss", $phoneNumber, $phoneNumber, $phoneNumber2, $phoneNumber2);
                 $customerStmt->execute();
                 $customerResult = $customerStmt->get_result();
                 
@@ -244,52 +277,23 @@ if ($_POST && isset($_FILES['csv_file']) && isset($_POST['users'])) {
                 $customerAction = '';
                 
                 if ($customerResult->num_rows > 0) {
-                    // Customer exists - UPDATE with new data from CSV
+                    // Customer exists - Do NOT update with new data from CSV, just get customer_id
                     $existingCustomer = $customerResult->fetch_assoc();
                     $customerId = $existingCustomer['customer_id'];
+                    $customerAction = 'found_existing'; // Indicate that an existing customer was found and not updated
                     
-                    // Update customer with new CSV data
-                    $customerUpdateSql = "UPDATE customers SET 
-                                         name = ?, 
-                                         email = ?, 
-                                         address_line1 = ?, 
-                                         address_line2 = ?, 
-                                         city_id = ? 
-                                         WHERE customer_id = ?";
-                    
-                    $customerUpdateStmt = $conn->prepare($customerUpdateSql);
-                    if (!$customerUpdateStmt) {
-                        throw new Exception("Failed to prepare customer update query: " . $conn->error);
-                    }
-                    
-                    $customerUpdateStmt->bind_param("ssssii", 
-                        $fullName, 
-                        $emailForDb, 
-                        $addressLine1, 
-                        $addressLine2, 
-                        $cityId, 
-                        $customerId
-                    );
-                    
-                    if (!$customerUpdateStmt->execute()) {
-                        throw new Exception("Failed to update customer: " . $customerUpdateStmt->error);
-                    }
-                    
-                    $customerUpdateStmt->close();
-                    $customerAction = 'updated';
-                    
-                    // Optional: Log the update for audit purposes
-                    error_log("Customer updated - ID: $customerId, Phone: $phoneNumber, Name: $fullName");
+                    // Optional: Log that an existing customer was found and details were not updated
+                    error_log("Existing customer found - ID: $customerId, Phone: $phoneNumber. Details not updated as per request.");
                     
                 } else {
                     // Customer doesn't exist - Create new customer
-                    $customerInsertSql = "INSERT INTO customers (name, email, phone, address_line1, address_line2, city_id) 
-                                         VALUES (?, ?, ?, ?, ?, ?)";
+                    $customerInsertSql = "INSERT INTO customers (name, email, phone, phone2, address_line1, address_line2, city_id) 
+                                         VALUES (?, ?, ?, ?, ?, ?, ?)";
                     $customerInsertStmt = $conn->prepare($customerInsertSql);
                     if (!$customerInsertStmt) {
                         throw new Exception("Failed to prepare customer insert query: " . $conn->error);
                     }
-                    $customerInsertStmt->bind_param("sssssi", $fullName, $emailForDb, $phoneNumber, $addressLine1, $addressLine2, $cityId);
+                    $customerInsertStmt->bind_param("ssssssi", $fullName, $emailForDb, $phoneNumber, $phoneNumber2, $addressLine1, $addressLine2, $cityId);
                     
                     if (!$customerInsertStmt->execute()) {
                         throw new Exception("Failed to create customer: " . $customerInsertStmt->error);
@@ -313,9 +317,9 @@ if ($_POST && isset($_FILES['csv_file']) && isset($_POST['users'])) {
                 $orderSql = "INSERT INTO order_header (
                     customer_id, user_id, issue_date, due_date, subtotal, discount, notes, 
                     pay_status, pay_by, total_amount, currency, status, product_code, interface, 
-                    mobile, city_id, address_line1, address_line2, full_name, call_log, created_by
+                    mobile, mobile2, city_id, address_line1, address_line2, full_name, call_log, created_by
                 ) VALUES (?, ?, CURDATE(), DATE_ADD(CURDATE(), INTERVAL 7 DAY), ?, 0.00, ?, 
-                         'unpaid', 'NULL', ?, 'lkr', 'pending', ?, 'leads', ?, ?, ?, ?, ?, 0, ?)";
+                         'unpaid', 'NULL', ?, 'lkr', 'pending', ?, 'leads', ?, ?, ?, ?, ?, ?, 0, ?)";
                 
                 $orderStmt = $conn->prepare($orderSql);
                 if (!$orderStmt) {
@@ -324,9 +328,9 @@ if ($_POST && isset($_FILES['csv_file']) && isset($_POST['users'])) {
                 $notes = !empty($other) ? $other : 'Imported from CSV';
                 
                 // Using the total amount from CSV (no longer needs to match product price)
-                $orderStmt->bind_param("iidsdssisssi", 
+                $orderStmt->bind_param("iidsdssissssi", 
                     $customerId, $assignedUserId, $totalAmountDecimal, $notes, $totalAmountDecimal, 
-                    $productCode, $phoneNumber, $cityId, $addressLine1, $addressLine2, 
+                    $productCode, $phoneNumber, $phoneNumber2, $cityId, $addressLine1, $addressLine2, 
                     $fullName, $loggedInUserId
                 );
                 
@@ -565,12 +569,14 @@ include($_SERVER['DOCUMENT_ROOT'] . '/OMS/dist/include/sidebar.php');
                             <ul>
                                 <li><strong>Download the template first</strong> - Use the provided CSV template</li>
                                 <li><strong>Required fields:</strong> Full Name, Phone, City, Product Code, Total Amount</li>
+                                <li><strong>Phone Number and Phone Number 2 must be 10 digits long.</strong></li>
+                                <li><strong>Phone Number 2 is optional</strong> - Leave blank if not available</li>
                                 <li><strong>Total Amount must be a positive number</strong> - Can be different from product price</li>
                                 <li><strong>Email is optional</strong> - Leave blank if not available</li>
                                 <li><strong>City names must match system database</strong></li>
                                 <li><strong>File limit:</strong> 10MB maximum, CSV format only</li>
                                 <li><strong>Select users</strong> to randomly assign leads to</li>
-                                <li><strong>Customer Update:</strong> Existing customers (same phone) will be updated with new CSV data</li>
+                                <li><strong>Customer Matching:</strong> Existing customers (matching primary or secondary phone number) will be reused. New customer data from CSV will NOT update existing customer details.</li>
                             </ul>
                         </div>
                         <hr>
