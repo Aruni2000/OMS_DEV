@@ -26,7 +26,7 @@ $show_payment_details = isset($_GET['show_payment']) && $_GET['show_payment'] ==
 // Updated query to include payment slip information and use order-specific customer details
 $order_query = "SELECT i.*, i.pay_status AS order_pay_status, i.full_name as customer_name, 
                 CONCAT_WS(', ', i.address_line1, i.address_line2) as customer_address, 
-                COALESCE(NULLIF(i.email, ''), c.email) as customer_email, i.mobile as customer_phone, i.mobile2 as customer_phone2,
+                i.email as customer_email, i.mobile as customer_phone, i.mobile2 as customer_phone2,
                 ct.city_name as customer_city,
                 p.payment_id, p.amount_paid, p.payment_method, p.payment_date, p.pay_by,
                 r.name as paid_by_name, u.name as user_name,

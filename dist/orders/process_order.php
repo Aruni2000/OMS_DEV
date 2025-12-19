@@ -104,7 +104,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         
         // Get customer details early
         $customer_name = trim($_POST['customer_name']);
-        $customer_email = trim($_POST['customer_email'] ?? '');
+        $customer_email = !empty(trim($_POST['customer_email'])) ? trim($_POST['customer_email']) : null;
         $customer_phone = trim($_POST['customer_phone'] ?? '');
         $customer_phone2 = trim($_POST['customer_phone2'] ?? '');
         
@@ -172,113 +172,79 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             }
         }
         
-        // Flag to determine if we should update customer details
-        $should_update_customer = true;
-        
-        // If no valid customer ID found, try lookup by Name and Email (if email provided)
-        if ($customer_id === 0) {
-            if (!empty($customer_email)) {
-                // Priority 1: Check Email AND Phone (Strict Match)
-                // If both match, we assume it's the same person and we can update their details
-                $checkCustomerSql = "SELECT customer_id, city_id, phone2, address_line1, address_line2 FROM customers WHERE email = ? AND phone = ?";
-                $stmt = $conn->prepare($checkCustomerSql);
-                $stmt->bind_param("ss", $customer_email, $customer_phone);
-                $stmt->execute();
-                $result = $stmt->get_result();
-
-                // Priority 2: Fallback check by Email ONLY (if exact match failed)
-                // This prevents "Duplicate entry" errors if customer changed their phone but used same email
-                if ($result->num_rows === 0) {
-                    $checkEmailSql = "SELECT customer_id, city_id, phone2, address_line1, address_line2 FROM customers WHERE email = ?";
-                    $stmt = $conn->prepare($checkEmailSql);
-                    $stmt->bind_param("s", $customer_email);
-                    $stmt->execute();
-                    $result = $stmt->get_result();
-                    
-                    // If found by fallback (Email only), DO NOT update the customer record
-                    if ($result->num_rows > 0) {
-                        $should_update_customer = false;
-                    }
-                }
-            } else {
-                // If no email, check by Name and Phone (since email is optional/null)
-                $checkCustomerSql = "SELECT customer_id, city_id, phone2 FROM customers WHERE name = ? AND phone = ?";
-                $stmt = $conn->prepare($checkCustomerSql);
-                $stmt->bind_param("ss", $customer_name, $customer_phone);
-                $stmt->execute();
-                $result = $stmt->get_result();
-            }
-            
+        // If no valid customer ID found, try lookup by email
+        if ($customer_id === 0 && !empty($customer_email)) {
+            $checkEmailSql = "SELECT customer_id, city_id, phone2, address_line1, address_line2 FROM customers WHERE email = ?";
+            $stmt = $conn->prepare($checkEmailSql);
+            $stmt->bind_param("s", $customer_email);
+            $stmt->execute();
+            $result = $stmt->get_result();
             if ($result->num_rows > 0) {
                 $customer = $result->fetch_assoc();
                 $customer_id = $customer['customer_id'];
-                
-                // If city_id is not provided in POST but exists in customer record, use existing
                 if (empty($city_id) && !empty($customer['city_id'])) {
                     $city_id = $customer['city_id'];
                 }
+            }
+        }
+
+        // If no customer found by ID or email, check by phone
+        if ($customer_id === 0) {
+            $phoneMatchFound = false;
+            if (!empty($customer_phone) || !empty($customer_phone2)) {
+                $phonesToCheck = [];
+                if (!empty($customer_phone)) $phonesToCheck[] = $customer_phone;
+                if (!empty($customer_phone2)) $phonesToCheck[] = $customer_phone2;
+
+                // Build dynamic SQL to check phone or phone2 matches any provided numbers
+                $conds = [];
+                foreach ($phonesToCheck as $p) {
+                    $conds[] = "phone = ? OR phone2 = ?";
+                }
+                $sqlPhones = "SELECT customer_id, city_id FROM customers WHERE status = 'Active' AND (" . implode(' OR ', $conds) . ") LIMIT 1";
+
+                $phoneStmt = $conn->prepare($sqlPhones);
+                // bind params: for each phone we bind it twice (phone and phone2)
+                $bindParams = [];
+                $bindTypes = '';
+                foreach ($phonesToCheck as $p) {
+                    $bindTypes .= 's';
+                    $bindParams[] = $p;
+                    $bindTypes .= 's';
+                    $bindParams[] = $p;
+                }
+
+                // Prepare arguments for bind_param
+                $bindArgs = array_merge([$bindTypes], $bindParams);
+                // Use reference array for call_user_func_array
+                $refs = [];
+                foreach ($bindArgs as $key => $value) {
+                    $refs[$key] = & $bindArgs[$key];
+                }
+                call_user_func_array(array($phoneStmt, 'bind_param'), $refs);
+                $phoneStmt->execute();
+                $phoneResult = $phoneStmt->get_result();
+                if ($phoneResult && $phoneResult->num_rows > 0) {
+                    $existingCust = $phoneResult->fetch_assoc();
+                    $customer_id = $existingCust['customer_id'];
+                    // Use city from existing if not provided
+                    if (empty($city_id) && !empty($existingCust['city_id'])) {
+                        $city_id = $existingCust['city_id'];
+                    }
+                    $phoneMatchFound = true;
+                }
+            }
+
+            if (!$phoneMatchFound) {
+                // Create new customer
+                $db_email = empty($customer_email) ? null : $customer_email;
                 
-            } else {
-                // Before creating a new customer, check if either phone exists on an Active customer
-                $phoneMatchFound = false;
-                if (!empty($customer_phone) || !empty($customer_phone2)) {
-                    $phonesToCheck = [];
-                    if (!empty($customer_phone)) $phonesToCheck[] = $customer_phone;
-                    if (!empty($customer_phone2)) $phonesToCheck[] = $customer_phone2;
-
-                    // Build dynamic SQL to check phone or phone2 matches any provided numbers
-                    $conds = [];
-                    foreach ($phonesToCheck as $p) {
-                        $conds[] = "phone = ? OR phone2 = ?";
-                    }
-                    $sqlPhones = "SELECT customer_id, city_id FROM customers WHERE status = 'Active' AND (" . implode(' OR ', $conds) . ") LIMIT 1";
-
-                    $phoneStmt = $conn->prepare($sqlPhones);
-                    // bind params: for each phone we bind it twice (phone and phone2)
-                    $bindParams = [];
-                    $bindTypes = '';
-                    foreach ($phonesToCheck as $p) {
-                        $bindTypes .= 's';
-                        $bindParams[] = $p;
-                        $bindTypes .= 's';
-                        $bindParams[] = $p;
-                    }
-
-                    // Prepare arguments for bind_param
-                    $bindArgs = array_merge([$bindTypes], $bindParams);
-                    // Use reference array for call_user_func_array
-                    $refs = [];
-                    foreach ($bindArgs as $key => $value) {
-                        $refs[$key] = & $bindArgs[$key];
-                    }
-                    call_user_func_array(array($phoneStmt, 'bind_param'), $refs);
-                    $phoneStmt->execute();
-                    $phoneResult = $phoneStmt->get_result();
-                    if ($phoneResult && $phoneResult->num_rows > 0) {
-                        $existingCust = $phoneResult->fetch_assoc();
-                        $customer_id = $existingCust['customer_id'];
-                        // Use city from existing if not provided
-                        if (empty($city_id) && !empty($existingCust['city_id'])) {
-                            $city_id = $existingCust['city_id'];
-                        }
-                        // Found an existing customer by phone. Do NOT modify the customers table.
-                        // Use the existing customer_id for the order, but keep the customer's stored details unchanged.
-                        $phoneMatchFound = true;
-                    }
-                }
-
-                if (!$phoneMatchFound) {
-                    // Create new customer
-                    // Convert empty email to NULL to prevent unique constraint violation
-                    $db_email = empty($customer_email) ? null : $customer_email;
-                    
-                    $insertCustomerSql = "INSERT INTO customers (name, email, phone, phone2, address_line1, address_line2, city_id, status, created_at, updated_at) 
-                                         VALUES (?, ?, ?, ?, ?, ?, ?, 'Active', NOW(), NOW())";
-                    $stmt = $conn->prepare($insertCustomerSql);
-                    $stmt->bind_param("ssssssi", $customer_name, $db_email, $customer_phone, $customer_phone2, $address_line1, $address_line2, $city_id);
-                    $stmt->execute();
-                    $customer_id = $conn->insert_id;
-                }
+                $insertCustomerSql = "INSERT INTO customers (name, email, phone, phone2, address_line1, address_line2, city_id, status, created_at, updated_at) 
+                                     VALUES (?, ?, ?, ?, ?, ?, ?, 'Active', NOW(), NOW())";
+                $stmt = $conn->prepare($insertCustomerSql);
+                $stmt->bind_param("ssssssi", $customer_name, $db_email, $customer_phone, $customer_phone2, $address_line1, $address_line2, $city_id);
+                $stmt->execute();
+                $customer_id = $conn->insert_id;
             }
         }
 
@@ -364,37 +330,23 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         
         
         // Insert order_header
+        // The order header stores the submitted customer contact details from the form,
+        // even when reusing an existing customer record, without modifying the original customer entry.
         $insertOrderSql = "INSERT INTO order_header (
             customer_id, user_id, issue_date, due_date, 
             subtotal, discount, total_amount, delivery_fee,
-            notes, currency, status, pay_status, pay_date, created_by, city_id, address_line1, address_line2, mobile, mobile2, full_name
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            notes, currency, status, pay_status, pay_date, created_by, city_id, address_line1, address_line2, mobile, mobile2, full_name, email
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         
         $stmt = $conn->prepare($insertOrderSql);
         $stmt->bind_param(
-            "iissddddsssssiisssss", 
+            "iissddddsssssiissssss", 
             $customer_id, $user_id, $order_date, $due_date, 
             $subtotal_before_discounts, $total_discount, $total_amount, $delivery_fee,
-            $notes, $currency, $status, $pay_status, $pay_date, $user_id, $city_id, $address_line1, $address_line2, $customer_phone, $customer_phone2, $customer_name
+            $notes, $currency, $status, $pay_status, $pay_date, $user_id, $city_id, $address_line1, $address_line2, $customer_phone, $customer_phone2, $customer_name, $customer_email
         );
         $stmt->execute();
         $order_id = $conn->insert_id;
-        // Ensure the order header stores the submitted customer contact details
-        // even when we reuse an existing customer record. Do not modify the
-        // customers table — only update the order_header row we just created.
-        $order_full_name = trim($_POST['customer_name'] ?? '');
-        $order_mobile = trim($_POST['customer_phone'] ?? '');
-        $order_mobile2 = trim($_POST['customer_phone2'] ?? '');
-        $order_addr1 = trim($_POST['address_line1'] ?? '');
-        $order_addr2 = trim($_POST['address_line2'] ?? '');
-        $order_email = trim($_POST['customer_email'] ?? '');
-        $updateOrderContactSql = "UPDATE order_header SET full_name = ?, mobile = ?, mobile2 = ?, address_line1 = ?, address_line2 = ?, email = ? WHERE order_id = ?";
-        $updateOrderContactStmt = $conn->prepare($updateOrderContactSql);
-        if ($updateOrderContactStmt) {
-            $updateOrderContactStmt->bind_param('ssssssi', $order_full_name, $order_mobile, $order_mobile2, $order_addr1, $order_addr2, $order_email, $order_id);
-            $updateOrderContactStmt->execute();
-            $updateOrderContactStmt->close();
-        }
         
         // Order items insertion
         $insertItemSql = "INSERT INTO order_items (

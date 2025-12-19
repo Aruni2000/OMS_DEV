@@ -370,6 +370,7 @@ include($_SERVER['DOCUMENT_ROOT'] . '/OMS/dist/include/sidebar.php');
                                 <div class="form-group">
                                     <label class="form-label">Email <span style="font-size: 0.8em; color: #6c757d; font-weight: normal;">(Optional)</span></label>
                                     <input type="email" class="form-control" name="customer_email" id="customer_email" placeholder="example@email.com">
+                                    <div id="email-warning-message" style="color: #ff9800; font-size: 0.875rem; margin-top: 0.25rem;"></div>
                                 </div>
                                 <div class="form-group">
                                     <label class="form-label">Phone</label>
@@ -1795,33 +1796,34 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Email uniqueness checker (debounced)
     function checkEmailUnique(email) {
+        const emailWarning = document.getElementById('email-warning-message');
         if (!email) {
             emailUniqueValid = true;
             emailCheckInProgress = false;
+            emailWarning.textContent = '';
             validateFormAndToggleSubmit();
             return;
         }
 
         emailCheckInProgress = true;
-        emailUniqueValid = false; // assume not unique until server responds
+        emailUniqueValid = true; // Always allow submission
         validateFormAndToggleSubmit();
 
         fetch(`../customers/check_email.php?email=${encodeURIComponent(email)}`)
             .then(response => response.json())
             .then(data => {
                 emailCheckInProgress = false;
-                if (data && data.error === 'invalid_format') {
-                    emailUniqueValid = false;
+                if (data && data.exists === true) {
+                    emailWarning.textContent = 'Warning: This email address already exists in the system.';
                 } else {
-                    emailUniqueValid = !(data && data.exists === true);
+                    emailWarning.textContent = '';
                 }
                 validateFormAndToggleSubmit();
             })
             .catch(error => {
                 console.error('Email check failed:', error);
-                // On error, allow the form to proceed (fail-open) but mark check complete
                 emailCheckInProgress = false;
-                emailUniqueValid = true;
+                emailWarning.textContent = '';
                 validateFormAndToggleSubmit();
             });
     }
