@@ -98,12 +98,12 @@ $courierStatus = checkCourierStatus($conn);
 $sql = "SELECT id, name, description, lkr_price FROM products WHERE status = 'active' ORDER BY name ASC";
 $result = $conn->query($sql);
 
-// Updated customer query with proper JOIN to get city_name
+// Updated customer query with proper JOIN to get city_name and ordering by customer_id DESC
 $customerSql = "SELECT c.*, ct.city_name 
                 FROM customers c 
                 LEFT JOIN city_table ct ON c.city_id = ct.city_id 
                 WHERE c.status = 'Active' 
-                ORDER BY c.name ASC";
+                ORDER BY c.customer_id DESC";
 $customerResult = $conn->query($customerSql);
 
 // Fetch cities for dropdown

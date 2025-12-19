@@ -99,7 +99,7 @@ $sql = "SELECT i.*, COALESCE(NULLIF(i.full_name, ''), c.name) AS customer_displa
                u1.name as paid_by_name,
                u2.name as user_name,
                i.slip as payment_slip, i.pay_status as order_pay_status,
-               i.created_at as order_created_at
+               i.updated_at as order_updated_at
         FROM order_header i 
         LEFT JOIN customers c ON i.customer_id = c.customer_id
         LEFT JOIN payments p ON i.order_id = p.order_id
@@ -245,20 +245,20 @@ include($_SERVER['DOCUMENT_ROOT'] . '/OMS/dist/include/sidebar.php');
     white-space: nowrap;
 }
 
-/* Style for Created Time column */
-.created-time {
+/* Style for Updated Time column */
+.updated-time {
     white-space: nowrap;
     font-size: 0.9em;
     color: #666;
 }
 
-.created-date {
+.updated-date {
     display: block;
     font-weight: 500;
     color: #333;
 }
 
-.created-time-only {
+.updated-time-only {
     display: block;
     font-size: 0.8em;
     color: #999;
@@ -457,13 +457,13 @@ include($_SERVER['DOCUMENT_ROOT'] . '/OMS/dist/include/sidebar.php');
 
                     </div>
 
-                <!-- Orders Table - MODIFIED to include Created Time column -->
+                <!-- Orders Table - MODIFIED to include Updated Time column -->
                 <div class="table-wrapper">
                     <table class="orders-table">
                         <thead>
                             <tr>
                                 <th>Order ID</th>
-                                <th>Created Time</th>
+                                <th>Updated Time</th>
                                 <th>Customer Name</th>
                                 <th>Total Amount</th>
                                 <th>Status</th>
@@ -485,13 +485,13 @@ include($_SERVER['DOCUMENT_ROOT'] . '/OMS/dist/include/sidebar.php');
                                             <?php echo isset($row['order_id']) ? htmlspecialchars($row['order_id']) : ''; ?>
                                         </td>
                                         
-                                        <!-- NEW: Created Time Column -->
-                                        <td class="created-time">
+                                        <!-- NEW: Updated Time Column -->
+                                        <td class="updated-time">
                                             <?php
-                                            if (isset($row['order_created_at']) && !empty($row['order_created_at'])) {
-                                                $createdAt = new DateTime($row['order_created_at']);
-                                                echo '<span class="created-date">' . $createdAt->format('Y-m-d') . '</span>';
-                                                echo '<span class="created-time-only">' . $createdAt->format('H:i:s') . '</span>';
+                                            if (isset($row['order_updated_at']) && !empty($row['order_updated_at'])) {
+                                                $createdAt = new DateTime($row['order_updated_at']);
+                                                echo '<span class="updated-date">' . $createdAt->format('Y-m-d') . '</span>';
+                                                echo '<span class="updated-time-only">' . $createdAt->format('H:i:s') . '</span>';
                                             } else {
                                                 echo '<span style="color: #999; font-style: italic;">N/A</span>';
                                             }

@@ -90,7 +90,8 @@ $countSql = "SELECT COUNT(*) as total FROM order_header i
 $sql = "SELECT i.*, COALESCE(NULLIF(i.full_name, ''), c.name) as customer_display_name, c.name as customer_name, 
                p.payment_id, p.amount_paid, p.payment_method, p.payment_date, p.pay_by,
                u1.name as paid_by_name,
-               u2.name as creator_name
+               u2.name as creator_name,
+               i.created_at as order_created_at
         FROM order_header i 
         LEFT JOIN customers c ON i.customer_id = c.customer_id
         LEFT JOIN payments p ON i.order_id = p.order_id
@@ -208,6 +209,24 @@ include($_SERVER['DOCUMENT_ROOT'] . '/OMS/dist/include/sidebar.php');
 
 .actions {
     white-space: nowrap;
+}
+/* Style for Created Time column */
+.created-time {
+    white-space: nowrap;
+    font-size: 0.9em;
+    color: #666;
+}
+
+.created-date {
+    display: block;
+    font-weight: 500;
+    color: #333;
+}
+
+.created-time-only {
+    display: block;
+    font-size: 0.8em;
+    color: #999;
 }
 </style>
 </head>
@@ -327,6 +346,7 @@ include($_SERVER['DOCUMENT_ROOT'] . '/OMS/dist/include/sidebar.php');
                     <input type="checkbox" id="selectAll" onchange="toggleSelectAll()">
                 </th>
                 <th>Order ID</th>
+                <th>Created Time</th>
                 <th>Customer Name</th>
                 <th>Issue Date - Due Date</th>
                 <th>Total Amount</th>
@@ -349,6 +369,18 @@ include($_SERVER['DOCUMENT_ROOT'] . '/OMS/dist/include/sidebar.php');
                         <!-- Order ID -->
                         <td class="order-id">
                             <?php echo isset($row['order_id']) ? htmlspecialchars($row['order_id']) : ''; ?>
+                        </td>
+                        <!-- NEW: Created Time Column -->
+                        <td class="created-time">
+                            <?php
+                            if (isset($row['order_created_at']) && !empty($row['order_created_at'])) {
+                                $createdAt = new DateTime($row['order_created_at']);
+                                echo '<span class="created-date">' . $createdAt->format('Y-m-d') . '</span>';
+                            echo '<span class="created-time-only">' . $createdAt->format('H:i:s') . '</span>';
+                                } else {
+                                echo '<span style="color: #999; font-style: italic;">N/A</span>';
+                                }
+                                ?>
                         </td>             
                         <!-- Customer Name with ID -->
                         <td class="customer-name">

@@ -29,6 +29,7 @@ function logUserAction($conn, $user_id, $action_type, $inquiry_id, $details) {
 
 // Process CSV upload if form is submitted
 if ($_POST && isset($_FILES['csv_file']) && isset($_POST['users'])) {
+$is_in_transaction = false;
     try {
         // Validate file upload
         if ($_FILES['csv_file']['error'] !== UPLOAD_ERR_OK) {
@@ -85,7 +86,7 @@ if ($_POST && isset($_FILES['csv_file']) && isset($_POST['users'])) {
         
         // Skip BOM if present
         $bom = fread($handle, 3);
-        if ($bom !== "\xEF\xBB\xBF") {
+        if ($bom !== "xEFxBBxBF") {
             rewind($handle);
         }
         
@@ -107,7 +108,9 @@ if ($_POST && isset($_FILES['csv_file']) && isset($_POST['users'])) {
         
         // Check if headers match
         if ($normalizedHeaders !== $normalizedExpected) {
-            throw new Exception("CSV headers do not match the expected format. Please use the template.");
+            $expected = implode(', ', $expectedHeaders);
+            $actual = implode(', ', $headers);
+            throw new Exception("CSV headers do not match the expected format. Expected: [$expected], but got: [$actual]. Please use the template.");
         }
         
         // Initialize counters
@@ -119,6 +122,7 @@ if ($_POST && isset($_FILES['csv_file']) && isset($_POST['users'])) {
         
         // Begin transaction
         $conn->begin_transaction();
+        $is_in_transaction = true;
         
         // Process each row
         while (($row = fgetcsv($handle)) !== FALSE) {
@@ -262,29 +266,36 @@ if (empty($email) || $email === '' || $email === 'NULL' || $email === 'null' || 
                 }
                 $cityStmt->close();
                 
-                // MODIFIED: Check if customer exists by phone number or phone2 and update if found
-                $customerSql = "SELECT customer_id, name, email, phone, phone2, address_line1, address_line2, city_id 
-                               FROM customers WHERE phone = ? OR phone2 = ? OR phone = ? OR phone2 = ?";
-                $customerStmt = $conn->prepare($customerSql);
-                if (!$customerStmt) {
-                    throw new Exception("Failed to prepare customer query: " . $conn->error);
-                }
-                $customerStmt->bind_param("ssss", $phoneNumber, $phoneNumber, $phoneNumber2, $phoneNumber2);
-                $customerStmt->execute();
-                $customerResult = $customerStmt->get_result();
-                
                 $customerId = null;
-                $customerAction = '';
-                
-                if ($customerResult->num_rows > 0) {
-                    // Customer exists - Do NOT update with new data from CSV, just get customer_id
-                    $existingCustomer = $customerResult->fetch_assoc();
-                    $customerId = $existingCustomer['customer_id'];
-                    $customerAction = 'found_existing'; // Indicate that an existing customer was found and not updated
-                    
-                    // Optional: Log that an existing customer was found and details were not updated
-                    error_log("Existing customer found - ID: $customerId, Phone: $phoneNumber. Details not updated as per request.");
-                    
+                if (!empty($emailForDb)) {
+                    $customerSql = "SELECT customer_id FROM customers WHERE email = ?";
+                    $customerStmt = $conn->prepare($customerSql);
+                    $customerStmt->bind_param("s", $emailForDb);
+                    $customerStmt->execute();
+                    $customerResult = $customerStmt->get_result();
+                    if ($customerResult->num_rows > 0) {
+                        $existingCustomer = $customerResult->fetch_assoc();
+                        $customerId = $existingCustomer['customer_id'];
+                    }
+                    $customerStmt->close();
+                }
+
+                if (!$customerId) {
+                    $customerSql = "SELECT customer_id FROM customers WHERE phone = ? OR phone2 = ? OR (phone2 IS NOT NULL AND phone2 = ?)";
+                    $customerStmt = $conn->prepare($customerSql);
+                    $customerStmt->bind_param("sss", $phoneNumber, $phoneNumber, $phoneNumber2);
+                    $customerStmt->execute();
+                    $customerResult = $customerStmt->get_result();
+                    if ($customerResult->num_rows > 0) {
+                        $existingCustomer = $customerResult->fetch_assoc();
+                        $customerId = $existingCustomer['customer_id'];
+                    }
+                    $customerStmt->close();
+                }
+
+                if ($customerId) {
+                    // Customer exists
+                    error_log("Existing customer found - ID: $customerId. Details not updated as per request.");
                 } else {
                     // Customer doesn't exist - Create new customer
                     $customerInsertSql = "INSERT INTO customers (name, email, phone, phone2, address_line1, address_line2, city_id) 
@@ -301,12 +312,10 @@ if (empty($email) || $email === '' || $email === 'NULL' || $email === 'null' || 
                     
                     $customerId = $conn->insert_id;
                     $customerInsertStmt->close();
-                    $customerAction = 'created';
                     
                     // Optional: Log the creation for audit purposes
                     error_log("New customer created - ID: $customerId, Phone: $phoneNumber, Name: $fullName");
                 }
-                $customerStmt->close();
                 
                 // Randomly assign to one of the selected users (this is the lead assignee)
                 $assignedUserId = $selectedUsers[array_rand($selectedUsers)];
@@ -317,9 +326,9 @@ if (empty($email) || $email === '' || $email === 'NULL' || $email === 'null' || 
                 $orderSql = "INSERT INTO order_header (
                     customer_id, user_id, issue_date, due_date, subtotal, discount, notes, 
                     pay_status, pay_by, total_amount, currency, status, product_code, interface, 
-                    mobile, mobile2, city_id, address_line1, address_line2, full_name, call_log, created_by
+                    mobile, mobile2, city_id, address_line1, address_line2, full_name, email, call_log, created_by
                 ) VALUES (?, ?, CURDATE(), DATE_ADD(CURDATE(), INTERVAL 7 DAY), ?, 0.00, ?, 
-                         'unpaid', 'NULL', ?, 'lkr', 'pending', ?, 'leads', ?, ?, ?, ?, ?, ?, 0, ?)";
+                         'unpaid', 'NULL', ?, 'lkr', 'pending', ?, 'leads', ?, ?, ?, ?, ?, ?, ?, 0, ?)";
                 
                 $orderStmt = $conn->prepare($orderSql);
                 if (!$orderStmt) {
@@ -328,10 +337,10 @@ if (empty($email) || $email === '' || $email === 'NULL' || $email === 'null' || 
                 $notes = !empty($other) ? $other : 'Imported from CSV';
                 
                 // Using the total amount from CSV (no longer needs to match product price)
-                $orderStmt->bind_param("iidsdssissssi", 
+                $orderStmt->bind_param("iidsdssisssssi", 
                     $customerId, $assignedUserId, $totalAmountDecimal, $notes, $totalAmountDecimal, 
                     $productCode, $phoneNumber, $phoneNumber2, $cityId, $addressLine1, $addressLine2, 
-                    $fullName, $loggedInUserId
+                    $fullName, $emailForDb, $loggedInUserId
                 );
                 
                 if (!$orderStmt->execute()) {
@@ -382,6 +391,7 @@ if (empty($email) || $email === '' || $email === 'NULL' || $email === 'null' || 
         
         // Commit transaction
         $conn->commit();
+        $is_in_transaction = false;
         
         // SIMPLIFIED LOGGING - Single log entry with summary
         if ($successCount > 0 || $errorCount > 0) {
@@ -428,7 +438,7 @@ if (empty($email) || $email === '' || $email === 'NULL' || $email === 'null' || 
         
     } catch (Exception $e) {
         // Rollback transaction on error
-        if ($conn->inTransaction()) {
+        if ($is_in_transaction) {
             $conn->rollback();
         }
         
