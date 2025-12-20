@@ -86,7 +86,7 @@ $is_in_transaction = false;
         
         // Skip BOM if present
         $bom = fread($handle, 3);
-        if ($bom !== "xEFxBBxBF") {
+        if ($bom !== "\xEF\xBB\xBF") {
             rewind($handle);
         }
         
