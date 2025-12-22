@@ -41,8 +41,8 @@ $time_from = isset($_GET['time_from']) ? trim($_GET['time_from']) : '';
 $time_to = isset($_GET['time_to']) ? trim($_GET['time_to']) : '';
 $status_filter = isset($_GET['status_filter']) ? trim($_GET['status_filter']) : 'all';
 
-// NEW: Tracking filter parameters - DEFAULT to 'with_tracking' for Nine Nine Bulk Print
-$tracking_filter = isset($_GET['tracking_filter']) ? trim($_GET['tracking_filter']) : 'with_tracking';
+// NEW: Tracking filter parameters - DEFAULT to 'all' for Nine Nine Bulk Print
+$tracking_filter = isset($_GET['tracking_filter']) ? trim($_GET['tracking_filter']) : 'all';
 $tracking_number = isset($_GET['tracking_number']) ? trim($_GET['tracking_number']) : '';
 
 $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 50;
@@ -92,7 +92,7 @@ $searchConditions = [];
 
 if (!empty($date)) {
     $dateTerm = $conn->real_escape_string($date);
-    $searchConditions[] = "DATE(o.updated_at) = '$dateTerm'";
+    $searchConditions[] = "DATE(o.issue_date) = '$dateTerm'";
 }
 
 if (!empty($time_from)) {

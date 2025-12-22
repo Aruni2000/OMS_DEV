@@ -26,7 +26,7 @@ include($_SERVER['DOCUMENT_ROOT'] . '/OMS/dist/connection/db_connection.php');
 $date = isset($_GET['date']) ? trim($_GET['date']) : date('Y-m-d'); // Default to today
 $time_from = isset($_GET['time_from']) ? trim($_GET['time_from']) : '';
 $time_to = isset($_GET['time_to']) ? trim($_GET['time_to']) : '';
-$status_filter = isset($_GET['status_filter']) ? trim($_GET['status_filter']) : 'all';
+$status_filter = 'dispatch';
 
 $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 50;
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
@@ -58,7 +58,7 @@ $searchConditions = [];
 // Date filter (single date)
 if (!empty($date)) {
     $dateTerm = $conn->real_escape_string($date);
-    $searchConditions[] = "DATE(o.updated_at) = '$dateTerm'";
+    $searchConditions[] = "DATE(o.issue_date) = '$dateTerm'";
 }
 
 // Time range filter
@@ -138,26 +138,24 @@ include($_SERVER['DOCUMENT_ROOT'] . '/OMS/dist/include/sidebar.php');
                             <div class="filter-group">
                                 <label for="date">Date</label>
                                 <input type="date" id="date" name="date" 
-                                       value="<?php echo htmlspecialchars($date); ?>">
+                                       value="<?php echo htmlspecialchars($date); ?>" onchange="this.form.submit()">
                             </div>
                             <div class="filter-group">
                                 <label for="time_from">Time From</label>
                                 <input type="time" id="time_from" name="time_from" 
-                                       value="<?php echo htmlspecialchars($time_from); ?>">
+                                       value="<?php echo htmlspecialchars($time_from); ?>" onchange="this.form.submit()">
                             </div>
                             
                             <div class="filter-group">
                                 <label for="time_to">Time To</label>
                                 <input type="time" id="time_to" name="time_to" 
-                                       value="<?php echo htmlspecialchars($time_to); ?>">
+                                       value="<?php echo htmlspecialchars($time_to); ?>" onchange="this.form.submit()">
                             </div>
                             
                             <div class="filter-group">
                                 <label for="status_filter">Status</label>
-                                <select id="status_filter" name="status_filter">
-                                   
-                                    <option value="dispatch" <?php echo ($status_filter == 'dispatch') ? 'selected' : ''; ?>>Dispatch</option>
-                    
+                                <select id="status_filter" name="status_filter" disabled>
+                                    <option value="dispatch" selected>Dispatch</option>
                                 </select>
                             </div>
 
@@ -172,9 +170,12 @@ include($_SERVER['DOCUMENT_ROOT'] . '/OMS/dist/include/sidebar.php');
                 </div>
 
                 <!-- Results Info -->
-                <!-- <div class="results-info">
-                    Total orders found: <?php echo $totalRows; ?>
-                </div> -->
+                <div class="results-info mt-3 mb-3">
+                    <div class="alert alert-info d-inline-block py-2 px-3 shadow-sm">
+                        <i class="fas fa-shipping-fast me-2"></i>
+                        <strong>Total Dispatch Orders: <?php echo $totalRows; ?></strong>
+                    </div>
+                </div>
 
                 <!-- Print Buttons -->
                 <div class="print-buttons">
@@ -200,6 +201,12 @@ include($_SERVER['DOCUMENT_ROOT'] . '/OMS/dist/include/sidebar.php');
         function printLabels(format) {
             // Get current filter parameters
             const params = new URLSearchParams(window.location.search);
+            
+            // Explicitly set current form values if they are not in URL
+            params.set('date', document.getElementById('date').value);
+            params.set('time_from', document.getElementById('time_from').value);
+            params.set('time_to', document.getElementById('time_to').value);
+            params.set('status_filter', document.getElementById('status_filter').value);
             params.set('format', format);
             params.delete('page'); // Remove pagination for print
 
@@ -217,7 +224,7 @@ include($_SERVER['DOCUMENT_ROOT'] . '/OMS/dist/include/sidebar.php');
             document.getElementById('date').value = '<?php echo date('Y-m-d'); ?>';
             document.getElementById('time_from').value = '';
             document.getElementById('time_to').value = '';
-            document.getElementById('status_filter').value = 'all';
+            document.getElementById('status_filter').value = 'dispatch';
             
             // Submit the form to apply the cleared filters
             document.getElementById('filterForm').submit();
