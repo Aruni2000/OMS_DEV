@@ -101,7 +101,7 @@ $searchConditions = [];
 
 if (!empty($date)) {
     $dateTerm = $conn->real_escape_string($date);
-    $searchConditions[] = "DATE(o.updated_at) = '$dateTerm'";
+    $searchConditions[] = "DATE(o.issue_date) = '$dateTerm'";
 }
 
 if (!empty($time_from)) {
@@ -142,7 +142,7 @@ if (!empty($searchConditions)) {
     $sql .= " AND " . implode(' AND ', $searchConditions);
 }
 
-$sql .= " ORDER BY o.updated_at DESC, o.order_id DESC LIMIT $limit OFFSET $offset";
+$sql .= " ORDER BY o.issue_date DESC, o.order_id DESC LIMIT $limit OFFSET $offset";
 
 // Execute query
 $result = $conn->query($sql);

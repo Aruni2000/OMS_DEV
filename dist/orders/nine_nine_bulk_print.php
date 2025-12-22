@@ -92,7 +92,7 @@ $searchConditions = [];
 
 if (!empty($date)) {
     $dateTerm = $conn->real_escape_string($date);
-    $searchConditions[] = "DATE(o.updated_at) = '$dateTerm'";
+    $searchConditions[] = "DATE(o.issue_date) = '$dateTerm'";
 }
 
 if (!empty($time_from)) {
