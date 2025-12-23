@@ -68,6 +68,9 @@ if ($result->num_rows === 0) {
 
 $order = $result->fetch_assoc();
 
+// Check if the order is paid
+$is_paid = isset($order['pay_status']) && strtolower($order['pay_status']) === 'paid';
+
 // Get order items with proper quantity grouping for same products
 $items_query = "SELECT oi.product_id, p.name as product_name, 
                 SUM(oi.quantity) as total_quantity
@@ -95,12 +98,26 @@ while ($item = $items_result->fetch_assoc()) {
 $currency = isset($order['currency']) ? strtolower($order['currency']) : 'lkr';
 $currencySymbol = ($currency == 'usd') ? '$' : 'Rs.';
 
-// Company information
+// Fetch branding settings
+$branding_result = $conn->query("SELECT * FROM branding LIMIT 1");
+
+if ($branding_result && $branding_result->num_rows > 0) {
+    $db_branding = $branding_result->fetch_assoc();
+    
+    // Update branding array with database values if they exist
+    foreach (['company_name', 'web_name', 'address', 'email', 'hotline', 'logo_url'] as $field) {
+        if (!empty($db_branding[$field])) {
+            $branding[$field] = $db_branding[$field];
+        }
+    }
+}
+
+// Company information for display
 $company = [
-    'name' => 'FE IT Solutions pvt (Ltd)',
-    'address' => 'No: 04, Wijayamangalarama Road, Kohuwala',
-    'email' => 'info@feitsolutions.com',
-    'phone' => '011-2824524'
+    'name' => $branding['company_name'] ?? '',
+    'address' => $branding['address'] ?? '',
+    'email' => $branding['email'] ?? '',
+    'phone' => $branding['hotline'] ?? ''
 ];
 
 // Calculate totals
@@ -145,17 +162,20 @@ $qr_url = $has_tracking ? getQRCodeUrl("Tracking: " . $tracking_number . " | Ord
             <tr>
                 <td class="header-section" colspan="2">
                     <div class="company-logo">
-                        <img src="../assets/images/OMS.png" alt="Company Logo">
+                        <img src="<?php echo htmlspecialchars($branding['logo_url']); ?>" alt="Company Logo">
                     </div>
                     <div class="company-name"><?php echo htmlspecialchars($company['name']); ?></div>
                     <div class="company-info">Address: <?php echo htmlspecialchars($company['address']); ?></div>
-                    <div class="company-info">Phone: <?php echo htmlspecialchars($company['phone']); ?> | Email: <?php echo htmlspecialchars($company['email']); ?></div>
+                    <div class="company-info">Phone: <?php echo htmlspecialchars($company['phone']); ?> <br>Email: <?php echo htmlspecialchars($company['email']); ?></div>
                 </td>
                 <td class="order-id-cell">
                     <div style="font-weight: bold; margin-bottom: 2mm;">Order ID: <?php echo str_pad($order_id, 5, '0', STR_PAD_LEFT); ?></div>
                     
                     <?php if ($has_tracking): ?>
                         <div style="font-weight: bold; margin-bottom: 2mm; color: #2563eb;"></div>
+                        <?php if (isset($is_paid) && $is_paid): ?>
+                            <div style="font-weight: bold; margin-top: 2mm; color: black; font-size: 15px;">PAID</div>
+                        <?php endif; ?>
                         <div class="barcode-section">
                             <img src="<?php echo $barcode_url; ?>" alt="Tracking Barcode" class="barcode-image" onerror="this.style.display='none'">
                             <div style="font-size: 7px; margin-top: 1mm; color: #666;"></div>
@@ -212,6 +232,16 @@ $qr_url = $has_tracking ? getQRCodeUrl("Tracking: " . $tracking_number . " | Ord
             </tr>
 
             <!-- Customer Details and Totals -->
+            <?php if (isset($is_paid) && $is_paid): ?>
+                <tr>
+                    <td class="customer-info" colspan="3">
+                        <H3>Customer Details</H3><br>
+                        <strong>Name:</strong> <?php echo htmlspecialchars(substr($order['display_name'], 0, 20)); ?><br>
+                        <strong>Phone:</strong> <?php echo htmlspecialchars($order['display_mobile']); ?><br>
+                        <strong>Address:</strong> <?php echo htmlspecialchars(substr($order['display_address'], 0, 60)) . (strlen($order['display_address']) > 60 ? '...' : ''); ?>
+                    </td>
+                </tr>
+            <?php else: ?>
             <tr>
                 <td class="customer-header">Customer Details</td>
                 <td class="totals-header">Summary</td>
@@ -241,6 +271,7 @@ $qr_url = $has_tracking ? getQRCodeUrl("Tracking: " . $tracking_number . " | Ord
                 <td class="total-payable" colspan="2">TOTAL PAYABLE</td>
                 <td class="total-payable amount"><?php echo $currencySymbol . ' ' . number_format($total_payable, 2); ?></td>
             </tr>
+            <?php endif; ?>
         </table>
     </div>
 

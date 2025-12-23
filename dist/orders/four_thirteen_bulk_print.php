@@ -155,12 +155,26 @@ function getOrderProducts($conn, $order_id) {
     return $products;
 }
 
-// Company information (From address)
+// Fetch branding settings
+$branding_result = $conn->query("SELECT * FROM branding LIMIT 1");
+
+if ($branding_result && $branding_result->num_rows > 0) {
+    $db_branding = $branding_result->fetch_assoc();
+    
+    // Update branding array with database values if they exist
+    foreach (['company_name', 'web_name', 'address', 'email', 'hotline'] as $field) {
+        if (!empty($db_branding[$field])) {
+            $branding[$field] = $db_branding[$field];
+        }
+    }
+}
+
+// Company information for display
 $company = [
-   'name' => 'FE IT Solutions pvt (Ltd)',
-    'address' => 'No: 04, Wijayamangalarama Road, Kohuwala',
-    'email' => 'info@feitsolutions.com',
-    'phone' => '011-2824524'
+    'name' => $branding['company_name'] ?? '',
+    'address' => $branding['address'] ?? '',
+    'email' => $branding['email'] ?? '',
+    'phone' => $branding['hotline'] ?? ''
 ];
 
 /**
