@@ -198,7 +198,9 @@ $fe_conn->close();
                         <div class="card-body ">
                             <div class="text-center mb-8">
                                 <!-- ✅ Branding logo -->
-                                <a href="#"><img src="<?php echo $logo_url; ?>" alt="Company Logo" /></a>
+                                <a href="#"><img src="<?php echo $logo_url; ?>" alt="Company   │
+│     Logo" style="max-height: 100px; max-width: 200px; height: auto; width:   │
+│     auto; display: block; margin: 0 auto;" /></a> 
                             </div>
 
                             <h4 class="text-center font-medium mb-4">Login</h4>

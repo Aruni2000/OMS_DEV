@@ -13,7 +13,7 @@ header('Access-Control-Allow-Headers: Content-Type');
 // Get the courier callback parameters
 $waybill_id = isset($_POST["waybill_id"]) ? $_POST["waybill_id"] : '';
 $delivery_status = isset($_POST["current_status"]) ? $_POST["current_status"] : '';
-$last_update_time = isset($_POST["last_scan_date"]) ? $_POST["last_scan_date"] : date('Y-m-d H:i:s');
+$last_update_time = isset($_POST["last_update_time"]) ? $_POST["last_update_time"] : date('Y-m-d H:i:s');
 
 // Log the incoming data for debugging
 error_log("Courier webhook received - Waybill: $waybill_id, Status: $delivery_status, Time: $last_update_time");
