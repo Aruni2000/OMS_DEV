@@ -111,13 +111,26 @@ if (isset($order['order_pay_status']) && !empty($order['order_pay_status'])) {
         $orderPayStatus = 'unpaid';
     }
 }
+// Fetch branding settings
+$branding_result = $conn->query("SELECT * FROM branding LIMIT 1");
+
+if ($branding_result && $branding_result->num_rows > 0) {
+    $db_branding = $branding_result->fetch_assoc();
+    
+    // Update branding array with database values if they exist
+    foreach (['company_name', 'web_name', 'address', 'email', 'hotline', 'logo_url'] as $field) {
+        if (!empty($db_branding[$field])) {
+            $branding[$field] = $db_branding[$field];
+        }
+    }
+}
 
 // Company information
 $company = [
-    'name' => 'FE IT Solutions pvt (Ltd)',
-    'address' => 'No: 04, Wijayamangalarama Road, Kohuwala',
-    'email' => 'info@feitsolutions.com',
-    'phone' => '011-2824524'
+    'name' => $branding['company_name'] ?? '',
+    'address' => $branding['address'] ?? '',
+    'email' => $branding['email'] ?? '',
+    'phone' => $branding['hotline'] ?? ''
 ];
 
 // Function to get the color for payment status
@@ -230,7 +243,7 @@ $column_count = $has_any_discount ? 5 : 4;
     <div class="order-container modal-specific">
         <div class="order-header">
             <div class="company-logo">
-                <img src="../assets/images/logo-white.svg" alt="Company Logo">
+                <img src="<?php echo htmlspecialchars($branding['logo_url']); ?>" alt="Company Logo">
             </div>
             <div class="order-info">
                 <div class="order-title">
@@ -259,9 +272,8 @@ $column_count = $has_any_discount ? 5 : 4;
             <div class="billing-block">
                 <div class="billing-title">Billing From :</div>
                 <div class="billing-info">
-                    <div><?php echo htmlspecialchars($company['name']); ?></div>
-                    <div>No: 04</div>
-                    <div>Wijayamangalarama Road, Kohuwala</div>
+                    <div><?php echo htmlspecialchars($branding['company_name']); ?></div>
+                    <div><?php echo htmlspecialchars($company['address']); ?></div>
                     <div><?php echo htmlspecialchars($company['email']); ?></div>
                     <div><?php echo htmlspecialchars($company['phone']); ?></div>
                 </div>
