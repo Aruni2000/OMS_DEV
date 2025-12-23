@@ -8,8 +8,8 @@
 /* Page Layout - 6 labels per page in 2x3 grid */
 .page-wrapper {
     display: grid;
-    grid-template-columns: repeat(2, 8.5cm);
-    grid-template-rows: repeat(3, 8.5cm);
+    grid-template-columns: repeat(2, 100mm);
+    grid-template-rows: repeat(2, 100mm);
     gap: 2mm;
     page-break-after: always;
     justify-content: center;
@@ -22,8 +22,8 @@
 
 /* Individual Label - FIXED: Better space management */
 .label-wrapper {
-    width: 8.5cm;
-    height: 8.5cm;
+    width: 100mm;
+    height: 100mm;
     border: 1px dashed #333;
     padding: 2mm;
     overflow: hidden;
@@ -264,7 +264,7 @@
     }
     
     .receipt-container {
-        height: calc(8.5cm - 4mm);
+        height: calc(100mm - 4mm);
     }
 }
 
@@ -349,4 +349,3 @@
         display: none !important;
     }
 }
-

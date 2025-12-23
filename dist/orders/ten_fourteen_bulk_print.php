@@ -1,6 +1,6 @@
 <?php
 /**
- * Ten Fourteen Bulk Print (10cm × 13.9cm Labels)
+ * Ten Fourteen Bulk Print (10.16cm × 15.24cm Labels)
  * Prints multiple orders based on filters from label print page
  * Each order is printed as a compact label with all essential information
  * Updated to use external print.css stylesheet
@@ -277,7 +277,7 @@ foreach ($orders as $order) {
     <div class="print-instructions">
         <h3>Ten Fourteen Bulk Print Instructions</h3>
         <p><strong>Orders Found:</strong> <?php echo count($orders); ?> orders</p>
-        <p><strong>Label Size:</strong> 10cm × 13.9cm receipt format</p>
+        <p><strong>Label Size:</strong> 10.16cm × 15.24cm receipt format</p>
         <p><strong>Labels Per Page:</strong> 4 labels (2x2 grid)</p>
         <p><strong>Format:</strong> Comma-separated products with grouped quantities</p>
     

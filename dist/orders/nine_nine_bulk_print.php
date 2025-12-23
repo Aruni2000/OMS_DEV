@@ -1,6 +1,6 @@
 <?php
 /**
- * Nine Nine Bulk Print (8.5cm × 8.5cm Labels) 
+ * Nine Nine Bulk Print (100mm x 100mm Labels) 
  * Prints multiple orders based on filters from label print page
  * Each order is printed as a compact label with all essential information
  * Updated to use external print.css stylesheet
@@ -268,8 +268,8 @@ foreach ($orders as $order) {
     <div class="print-instructions">
         <h3>Nine Nine Bulk Print Instructions </h3>
         <p><strong>Orders Found:</strong> <?php echo count($orders); ?> orders</p>
-        <p><strong>Label Size:</strong> 8.5cm × 8.5cm compact format</p>
-        <p><strong>Labels Per Page:</strong> 6 labels (2×3 grid)</p>
+        <p><strong>Label Size:</strong> 100mm × 100mm compact format</p>
+        <p><strong>Labels Per Page:</strong> 4 labels (2×2 grid)</p>
         
       
         <p><strong>Filters Applied:</strong></p>
