@@ -152,7 +152,7 @@ $qr_url = $has_tracking ? getQRCodeUrl("Tracking: " . $tracking_number . " | Ord
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Order Print - <?php echo $order_id; ?></title>
-    <link rel="stylesheet" href="../assets/css/print.css" id="main-style-link" />
+    <link rel="stylesheet" href="../assets/css/ten_fourteen_bulk_print.css" id="main-style-link" />
 </head>
 <body>
     <div class="receipt-container">
