@@ -181,7 +181,7 @@ include($_SERVER['DOCUMENT_ROOT'] . '/OMS/dist/include/sidebar.php');
                 <div class="print-buttons">
                     <button class="print-btn" onclick="printLabels('9x9')">
                         <i class="fas fa-print"></i>
-                        Print 9×9 Labels
+                        Print 10×10 Labels
                     </button>
                     <button class="print-btn" onclick="printLabels('4x13')">
                         <i class="fas fa-print"></i>
@@ -189,7 +189,7 @@ include($_SERVER['DOCUMENT_ROOT'] . '/OMS/dist/include/sidebar.php');
                     </button>
                     <button class="print-btn" onclick="printLabels('regular')">
                         <i class="fas fa-print"></i>
-                       Print 10×14 Labels
+                       Print 4×6 Labels
                     </button>
                 </div>
             </div>

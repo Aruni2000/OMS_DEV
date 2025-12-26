@@ -1,0 +1,248 @@
+/* =====================================================
+   TEN FOURTEEN – COURIER LABEL
+   SIZE: 10.16cm x 15.24cm
+   1 LABEL PER PAGE – LESS WHITE SPACE, BIGGER FONT
+===================================================== */
+
+@page {
+  size: 10.16cm 15.24cm;
+  margin: 0;
+}
+
+/* RESET */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+body {
+  width: 10.16cm;
+  height: 15.24cm;
+  background: #fff;
+  color: #000;
+}
+
+/* CONTAINERS */
+.labels-container,
+.page-wrapper,
+.label-wrapper,
+.receipt-container {
+  width: 10.16cm;
+  height: 15.24cm;
+  
+}
+
+.page-wrapper {
+  page-break-after: always;
+}
+
+.receipt-container {
+  padding: 1mm;
+}
+
+/* ================= TABLE ================= */
+
+.main-table {
+  width: 100%;
+  height: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-size: 10px;
+}
+
+.main-table td {
+  border: 1px solid #000;
+  padding: 0.5mm;
+  vertical-align: top;
+}
+
+/* ================= HEADER (FIXED HEIGHT) ================= */
+
+.header-section {
+  height: 15mm;
+  padding: 0.5mm;
+  text-align: center;
+}
+
+.company-logo img {
+  max-height: 14mm;
+  max-width: 30mm;
+}
+
+.company-name {
+  font-size: 12px;
+  font-weight: bold;
+  line-height: 1.1;
+}
+
+.company-info {
+  font-size: 9px;
+  line-height: 1.1;
+}
+
+/* ================= BARCODE ================= */
+
+.order-id-cell {
+  width: 32%;
+  text-align: center;
+  padding: 0.5mm;
+}
+
+.barcode-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.barcode-image {
+  width: 100%;
+  max-height: 16mm; /* slightly taller */
+}
+
+.barcode-text {
+  font-size: 9px;
+  font-weight: bold;
+  margin-top: 0.5mm;
+}
+
+/* ================= DELIVERY ================= */
+
+.delivery-service-cell,
+.tracking-cell {
+  height: 15mm;
+  font-size: 12px;
+  line-height: 2.2;
+  text-align: center;
+}
+
+/* ================= PRODUCTS ================= */
+
+.product-header {
+  font-size: 10px;
+  line-height: 1.2;
+  padding: 1mm;
+}
+
+/* ================= CUSTOMER / TOTAL ================= */
+
+.customer-header,
+.totals-header {
+  height: 10mm;
+  font-weight: bold;
+  font-size: 11px;
+  background: #f0f0f0;
+  text-align: center;
+}
+
+.customer-info {
+  font-size: 10px;
+  line-height: 2.2;
+}
+
+.totals-cell {
+  font-size: 10px;
+  text-align: center;
+  line-height: 2.2;
+}
+
+.totals-cell.amount {
+  font-weight: bold;
+  text-align: right;
+}
+
+/* ================= TOTAL PAYABLE ================= */
+
+.total-payable {
+  font-size: 11px;
+  font-weight: bold;
+  border-top: 2px solid #000;
+  text-align: center;
+  padding: 0.5mm;
+}
+
+.total-payable.amount {
+  text-align: right;
+  padding-right: 1mm;
+}
+
+/* SCREEN PREVIEW */
+@media screen {
+  body {
+    background: #e5e7eb;
+  }
+
+  .receipt-container {
+    background: #fff;
+    box-shadow: 0 0 6px rgba(0, 0, 0, 0.25);
+  }
+}
+
+/* ================= Bulk Print Instructions ================= */
+.print-instructions {
+  background: #fff;
+  border: 1px solid #000;
+  padding: 15px;
+  margin: 10px 0;
+  font-family: Arial, sans-serif;
+  font-size: 13px;
+  color: #000;
+}
+
+.print-instructions h3 {
+  color: #000;
+  margin: 0 0 10px 0;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.print-instructions p,
+.print-instructions li {
+  color: #000;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.print-instructions p strong {
+  font-weight: bold;
+  color: #000;
+}
+
+.print-button {
+  background: #000;
+  color: white;
+  border: 1px solid #000;
+  padding: 6px 12px;
+  margin: 10px 8px 0 0;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: normal;
+  display: inline-block;
+  text-decoration: none;
+}
+
+.print-button:hover {
+  background: #333;
+  border-color: #333;
+}
+
+/* Close button */
+.print-button[style*="background: #6c757d"] {
+  background: #666 !important;
+  border-color: #666 !important;
+}
+
+.print-button[style*="background: #6c757d"]:hover {
+  background: #444 !important;
+  border-color: #444 !important;
+}
+
+/* Hide controls when printing */
+@media print {
+  .print-instructions {
+    display: none !important;
+  }
+}

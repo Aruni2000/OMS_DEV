@@ -269,7 +269,7 @@ foreach ($orders as $order) {
     <title>Ten Fourteen Bulk Print - Receipt Labels (<?php echo count($orders); ?> orders)</title>
     
     <!-- Link to external CSS file -->
-    <link rel="stylesheet" href="../assets/css/print.css">
+    <link rel="stylesheet" href="../assets/css/ten_fourteen_bulk_print.css">
     
 </head>
 <body>
@@ -277,8 +277,8 @@ foreach ($orders as $order) {
     <div class="print-instructions">
         <h3>Ten Fourteen Bulk Print Instructions</h3>
         <p><strong>Orders Found:</strong> <?php echo count($orders); ?> orders</p>
-        <p><strong>Label Size:</strong> 10.16cm × 15.24cm receipt format</p>
-        <p><strong>Labels Per Page:</strong> 4 labels (2x2 grid)</p>
+        <p><strong>Label Size:</strong> 10.21cm × 15.19cm receipt format</p>
+        <p><strong>Labels Per Page:</strong> 1 label (Full Cover)</p>
         <p><strong>Format:</strong> Comma-separated products with grouped quantities</p>
     
         
@@ -313,7 +313,7 @@ foreach ($orders as $order) {
             </div>
         <?php else: ?>
             <?php 
-            $labels_per_page = 4; // CHANGED: Now 4 labels per page
+            $labels_per_page = 1; // CHANGED: Now 4 labels per page
             $total_orders = count($orders);
             $current_page_labels = 0;
             ?>
@@ -386,7 +386,7 @@ foreach ($orders as $order) {
                                         <!-- UPDATED: Barcode Section - Now shows tracking number -->
                                         <?php if ($has_tracking): ?>
                                             <img src="<?php echo $barcode_url; ?>" alt="Tracking Barcode" class="barcode-image" onerror="this.style.display='none'">
-                                            <div class="barcode-text"><?php echo htmlspecialchars($tracking_number_raw); ?></div>
+                                            
                                             <div style="font-size: 6px; margin-top: 0.5mm; color: #666;"></div>
                                         <?php else: ?>
                                             <div class="no-tracking-barcode">
@@ -486,7 +486,7 @@ foreach ($orders as $order) {
                         <div class="page-break"></div>
                     <?php endif; ?>
                 <?php endif; ?>
-                
+
             <?php endforeach; ?>
         <?php endif; ?>
     </div>

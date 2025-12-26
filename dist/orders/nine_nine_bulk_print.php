@@ -4,7 +4,7 @@
  * Prints multiple orders based on filters from label print page
  * Each order is printed as a compact label with all essential information
  * Updated to use external print.css stylesheet
- * FIXED: Now prints 6 labels per page
+ * FIXED: Now prints 1 labels per page (10cm x 10cm)
  * FIXED: Customer address display issue resolved with city information
  * FIXED: Barcode positioning and font size issues
  * FIXED: Better space management and readable font sizes
@@ -260,7 +260,7 @@ foreach ($orders as $order) {
     <title>Nine Nine Bulk Print - Receipt Labels (<?php echo count($orders); ?> orders)</title>
     
    <!-- Link to external CSS file -->
-<link rel="stylesheet" type="text/css" href="../assets/css/bulk_print.css">
+<link rel="stylesheet" type="text/css" href="../assets/css/nine_nine_bulk_print.css">
     
 </head>
 <body>
@@ -300,7 +300,7 @@ foreach ($orders as $order) {
             </div>
         <?php else: ?>
             <?php 
-            $labels_per_page = 6; // 6 labels per page
+            $labels_per_page = 1; // 1 label per page
             $total_orders = count($orders);
             $current_page_labels = 0;
             ?>
@@ -452,8 +452,7 @@ foreach ($orders as $order) {
                         <div class="barcode-section">
                             <?php if ($has_tracking): ?>
                                 <img src="<?php echo $barcode_url; ?>" alt="Tracking Barcode" class="barcode-image" onerror="this.style.display='none'">
-                                <div class="barcode-text"><?php echo htmlspecialchars($tracking_number); ?></div>
-                                <div style="font-size: 6px; margin-top: 0.5mm; color: #666;"></div>
+                                
                             <?php else: ?>
                                 <div class="no-tracking-barcode">
                                     <div style="border: 1px dashed #dc2626; padding: 4px; text-align: center; font-size: 8px; color: #dc2626; background: #fef2f2;">
