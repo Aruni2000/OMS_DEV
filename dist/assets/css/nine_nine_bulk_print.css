@@ -57,26 +57,44 @@ body {
 .header-section {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   border-bottom: 1px solid #000;
   padding-bottom: 1mm;
 }
 
 .company-left {
   display: flex;
-  align-items: center;
-  gap: 2mm;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5mm;
+  max-width: 60%;
 }
 
 .company-logo img {
-  max-width: 15mm;
+  max-width: 35mm;
   max-height: 10mm;
   object-fit: contain;
+  object-position: left;
+  margin-bottom: 0.5mm;
+}
+
+.company-info-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2mm;
 }
 
 .company-name {
   font-weight: bold;
   font-size: 10px;
+  line-height: 1.1;
+}
+
+.company-details {
+  font-size: 7px;
+  line-height: 1.2;
+  color: #000;
+  max-height: 0mm;
 }
 
 .order-right {
@@ -112,10 +130,11 @@ body {
 /* Delivery Info */
 .delivery-info {
   font-size: 10px;
+  margin-top: 10mm;
   padding: 0.5mm;
   background: #fff;
   border: 1px solid #000;
-  border-radius: 1mm;
+  text-align: center;
 }
 
 /* Products Section */
@@ -176,6 +195,10 @@ body {
 .products-header {
   border-top: 1px solid #000;
   padding-top: 0.5mm;
+}
+
+.products-list {
+  font-size: 8px;
 }
 
 .total-only {

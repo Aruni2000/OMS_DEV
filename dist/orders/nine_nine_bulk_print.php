@@ -55,7 +55,7 @@ $offset = ($page - 1) * $limit;
  */
 $sql = "SELECT o.order_id, o.customer_id, o.full_name, o.mobile, o.address_line1, o.address_line2,
                o.status, o.updated_at, o.interface, o.tracking_number, o.total_amount, o.currency,
-               o.delivery_fee, o.discount, o.issue_date,
+               o.delivery_fee, o.discount, o.issue_date, o.pay_status,
                c.name as customer_name, c.phone as customer_phone, 
                c.email as customer_email, c.city_id,
                
@@ -173,6 +173,16 @@ if (!empty($order_ids)) {
         }
     }
 }
+
+// Default branding values
+$branding = [
+    'company_name' => '',
+    'web_name' => '',
+    'address' => '',
+    'email' => '',
+    'hotline' => '',
+    'logo_url' => ''
+];
 
 // Fetch branding settings
 $branding_result = $conn->query("SELECT * FROM branding LIMIT 1");
@@ -338,6 +348,9 @@ foreach ($orders as $order) {
                 $discount = floatval($order['discount']);
                 $subtotal = calculateSubtotal($total_amount, $delivery_fee, $discount);
                 
+                // Check if the order is paid
+                $is_paid = isset($order['pay_status']) && strtolower($order['pay_status']) === 'paid';
+                
                 // Get items for this order
                 $order_items = isset($items_by_order[$order_id]) ? $items_by_order[$order_id] : [];
                 
@@ -347,17 +360,34 @@ foreach ($orders as $order) {
                 
                 <div class="label-wrapper <?php echo $compact_mode ? 'compact' : ''; ?>">
                     <div class="receipt-container">
-                        <!-- MODIFIED: Header Section with order info on right -->
+                        <!-- MODIFIED: Header Section with order info on right and company details -->
                         <div class="header-section">
                             <div class="company-left">
                                 <div class="company-logo">
-                                    <img src="<?php echo htmlspecialchars($branding['logo_url']); ?>"alt="Company Logo">
+                                    <img src="<?php echo htmlspecialchars($branding['logo_url']); ?>" alt="Company Logo">
                                 </div>
-                                <div class="company-name"><?php echo htmlspecialchars($company['name']); ?></div>
+                                <div class="company-info-block">
+                                    <div class="company-name"><?php echo htmlspecialchars($company['name']); ?></div>
+                                    <div class="company-details">
+                                        <div><?php echo htmlspecialchars($company['address']); ?></div>
+                                        <div>
+                                            <?php 
+                                            $contacts = [];
+                                            if (!empty($company['email'])) $contacts[] = $company['email'];
+                                            if (!empty($company['phone'])) $contacts[] = $company['phone'];
+                                            echo implode(' | ', array_map('htmlspecialchars', $contacts)); 
+                                            ?>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                             <div class="order-right">
                                 <div class="order-id">ORDER: <?php echo str_pad($order_id, 5, '0', STR_PAD_LEFT); ?></div>
                                 <div class="order-date"><?php echo !empty($order['issue_date']) ? date('Y-m-d', strtotime($order['issue_date'])) : date('Y-m-d'); ?></div>
+                                
+                                <?php if ($is_paid): ?>
+                                    <div style="font-weight: bold; margin-top: 1mm; color: black; font-size: 15px;">PAID</div>
+                                <?php endif; ?>
                                 
                                 <!-- NEW: Tracking status indicator -->
                                 <?php if ($has_tracking): ?>
@@ -430,9 +460,9 @@ foreach ($orders as $order) {
                             </div>
 
                             <!-- Delivery info with tracking status -->
-                            <div class="delivery-info" style="margin-top: 2mm;">
+                            <div class="delivery-info">
                                 <strong>Service:</strong> <?php echo !empty($order['delivery_service']) ? htmlspecialchars(substr($order['delivery_service'], 0, 15)) : 'none'; ?> | 
-                                <strong>Track:</strong> 
+                                <strong>Tracking:</strong> 
                                 <?php if ($has_tracking): ?>
                                     <span style="color: #2563eb;"><?php echo htmlspecialchars(substr($tracking_number, 0, 12)); ?></span>
                                 <?php else: ?>
@@ -442,11 +472,13 @@ foreach ($orders as $order) {
                         </div>
 
                         <!-- MODIFIED: Simplified Totals Section - only show total -->
+                        <?php if (!$is_paid): ?>
                         <div class="totals-section">
                             <div class="total-only">
                                 TOTAL: <?php echo $currency_symbol . ' ' . number_format($total_amount, 2); ?>
                             </div>
                         </div>
+                        <?php endif; ?>
 
                         <!-- UPDATED: Barcode Section - Show tracking number or "No Tracking" -->
                         <div class="barcode-section">
