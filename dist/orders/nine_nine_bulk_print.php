@@ -472,13 +472,13 @@ foreach ($orders as $order) {
                         </div>
 
                         <!-- MODIFIED: Simplified Totals Section - only show total -->
-                        <?php if (!$is_paid): ?>
+                        
                         <div class="totals-section">
                             <div class="total-only">
                                 TOTAL: <?php echo $currency_symbol . ' ' . number_format($total_amount, 2); ?>
                             </div>
                         </div>
-                        <?php endif; ?>
+                        
 
                         <!-- UPDATED: Barcode Section - Show tracking number or "No Tracking" -->
                         <div class="barcode-section">

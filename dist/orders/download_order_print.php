@@ -152,7 +152,7 @@ $qr_url = $has_tracking ? getQRCodeUrl("Tracking: " . $tracking_number . " | Ord
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Order Print - <?php echo $order_id; ?></title>
-    <link rel="stylesheet" href="../assets/css/ten_fourteen_bulk_print.css" id="main-style-link" />
+    <link rel="stylesheet" href="../assets/css/print.css" id="main-style-link" />
 </head>
 <body>
     <div class="receipt-container">
@@ -232,7 +232,6 @@ $qr_url = $has_tracking ? getQRCodeUrl("Tracking: " . $tracking_number . " | Ord
             </tr>
 
             <!-- Customer Details and Totals -->
-            <?php if (isset($is_paid) && $is_paid): ?>
                 <tr>
                     <td class="customer-info" colspan="3">
                         <H3>Customer Details</H3><br>
@@ -241,7 +240,6 @@ $qr_url = $has_tracking ? getQRCodeUrl("Tracking: " . $tracking_number . " | Ord
                         <strong>Address:</strong> <?php echo htmlspecialchars(substr($order['display_address'], 0, 60)) . (strlen($order['display_address']) > 60 ? '...' : ''); ?>
                     </td>
                 </tr>
-            <?php else: ?>
             <tr>
                 <td class="customer-header">Customer Details</td>
                 <td class="totals-header">Summary</td>
@@ -271,7 +269,7 @@ $qr_url = $has_tracking ? getQRCodeUrl("Tracking: " . $tracking_number . " | Ord
                 <td class="total-payable" colspan="2">TOTAL PAYABLE</td>
                 <td class="total-payable amount"><?php echo $currencySymbol . ' ' . number_format($total_payable, 2); ?></td>
             </tr>
-            <?php endif; ?>
+            
         </table>
     </div>
 
