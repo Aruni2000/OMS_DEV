@@ -414,7 +414,7 @@ foreach ($orders as $order) {
                                     <strong>Delivery Service:</strong>
                                     <?php echo !empty($order['delivery_service']) ? htmlspecialchars($order['delivery_service']) : 'Standard Delivery'; ?>
 
-                                    <hr style="border: 0; border-top: 1px solid #ccc; margin: 2px 0;">
+                                    <hr style="border: 0; border-top: 1px solid #ccc; margin: 5px 0;">
 
                                     <strong>Tracking:</strong> 
                                     <?php if ($has_tracking): ?>

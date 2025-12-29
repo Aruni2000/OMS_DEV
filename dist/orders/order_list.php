@@ -385,6 +385,10 @@ include($_SERVER['DOCUMENT_ROOT'] . '/OMS/dist/include/sidebar.php');
                                     <i class="fas fa-times"></i>
                                     Clear
                                 </button>
+                                <button type="button" class="search-btn" onclick="exportOrders()" style="background: #17b875ff;">
+                                    <i class="fas fa-file-export"></i>
+                                    Export
+                                </button>
                             </div>
                         </div>
                     </form>
@@ -741,6 +745,13 @@ let currentPayStatus = null; // Store payment status
         const currentUserRole = <?php echo $current_user_role; ?>;
         const currentUserId = <?php echo $current_user_id; ?>;
 
+
+ // NEW: Export orders function
+ function exportOrders() {
+     // Use current URL parameters to ensure we export exactly what is filtered and shown
+     const currentQueryString = window.location.search;
+     window.location.href = 'export_order_list.php' + currentQueryString;
+ }
 
 // Clear all filter inputs - Updated to include user_id_filter
 function clearFilters() {

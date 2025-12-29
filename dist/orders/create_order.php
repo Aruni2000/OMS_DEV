@@ -1814,7 +1814,7 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(data => {
                 emailCheckInProgress = false;
                 if (data && data.exists === true) {
-                    emailWarning.textContent = 'Warning: This email address already exists in the system.';
+                    emailWarning.textContent = 'This email address already exists in the system.';
                 } else {
                     emailWarning.textContent = '';
                 }
@@ -1851,6 +1851,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (email === '') {
             emailUniqueValid = true;
             emailCheckInProgress = false;
+            document.getElementById('email-warning-message').textContent = '';
             validateFormAndToggleSubmit();
             return;
         }
@@ -1858,6 +1859,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!isValidEmail(email)) {
             emailUniqueValid = false;
             emailCheckInProgress = false;
+            document.getElementById('email-warning-message').textContent = '';
             validateFormAndToggleSubmit();
             return;
         }

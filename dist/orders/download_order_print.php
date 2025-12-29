@@ -241,23 +241,18 @@ $qr_url = $has_tracking ? getQRCodeUrl("Tracking: " . $tracking_number . " | Ord
                     </td>
                 </tr>
             <tr>
-                <td class="customer-header">Customer Details</td>
                 <td class="totals-header">Summary</td>
-                <td class="totals-header">Amount</td>
+                <td class="totals-header" colspan="2">Amount</td>
             </tr>
 
             <tr>
-                <td class="customer-info">
-                    <strong>Name:</strong> <?php echo htmlspecialchars(substr($order['display_name'], 0, 20)); ?><br>
-                    <strong>Phone:</strong> <?php echo htmlspecialchars($order['display_mobile']); ?><br>
-                    <strong>Address:</strong> <?php echo htmlspecialchars(substr($order['display_address'], 0, 60)) . (strlen($order['display_address']) > 60 ? '...' : ''); ?>
-                </td>
+                
                 <td class="totals-cell">
                     Subtotal:<br>
                     Delivery:<br>
                     Discount:
                 </td>
-                <td class="totals-cell amount">
+                <td class="totals-cell amount" colspan="2">
                     <?php echo $currencySymbol . ' ' . number_format($subtotal, 2); ?><br>
                     <?php echo $currencySymbol . ' ' . number_format($delivery_fee, 2); ?><br>
                     <?php echo $currencySymbol . ' ' . number_format($discount, 2); ?>
