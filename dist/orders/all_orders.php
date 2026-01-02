@@ -381,9 +381,30 @@ include($_SERVER['DOCUMENT_ROOT'] . '/OMS/dist/include/sidebar.php');
 
                 <!-- Orders Table -->
                 <div class="table-wrapper">
+                    <!-- Bulk Actions Bar -->
+                    <div class="bulk-actions-bar" id="bulkActionsBar" style="display: none;">
+                        <div class="bulk-actions-left">
+                            <span id="selectedCount">0</span> orders selected
+                        </div>
+                        <div class="bulk-actions-right">
+                             <!-- NEW: API Dispatch Button -->
+                            <button class="bulk-btn bulk-api-dispatch-btn" onclick="openApiDispatchModal()">
+                                <i class="fas fa-cloud"></i> API Dispatch
+                            </button>
+
+                           
+                            <button class="bulk-btn bulk-clear-btn" onclick="clearBulkSelection()">
+                                <i class="fas fa-times"></i> Clear Selection
+                            </button>
+                        </div>
+                    </div>
+
                     <table class="orders-table">
                         <thead>
                             <tr>
+                                <th>
+                                    <input type="checkbox" id="selectAll" onchange="toggleSelectAll()">
+                                </th>
                                 <th>Order ID</th>
                                 <th>Customer Name</th>
                                 <th>Total Amount</th>
@@ -401,6 +422,17 @@ include($_SERVER['DOCUMENT_ROOT'] . '/OMS/dist/include/sidebar.php');
                             <?php if ($result && $result->num_rows > 0): ?>
                                 <?php while ($row = $result->fetch_assoc()): ?>
                                     <tr>
+                                        <!-- Bulk Selection Checkbox -->
+                                        <td>
+                                            <?php if (empty($row['tracking_number'])): ?>
+                                                <input type="checkbox" class="order-checkbox" 
+                                                       value="<?php echo isset($row['order_id']) ? htmlspecialchars($row['order_id']) : ''; ?>"
+                                                       onchange="updateBulkSelection()">
+                                            <?php else: ?>
+                                                <span class="text-muted" title="Has tracking number"><i class="fas fa-lock" style="font-size: 0.8em;"></i></span>
+                                            <?php endif; ?>
+                                        </td>
+
                                         <!-- Order ID -->
                                         <td class="order-id">
                                             <?php echo isset($row['order_id']) ? htmlspecialchars($row['order_id']) : ''; ?>
@@ -635,6 +667,9 @@ include($_SERVER['DOCUMENT_ROOT'] . '/OMS/dist/include/sidebar.php');
    
     <!-- Order View Modal -->
       <?php include($_SERVER['DOCUMENT_ROOT'] . '/OMS/dist/include/order_view_modal.php'); ?>
+
+    <!--  ADD THE API DISPATCH MODAL HTML -->
+    <?php include($_SERVER['DOCUMENT_ROOT'] . '/OMS/dist/include/api_dispatch.php'); ?>
 
   <script>
 // MODIFIED: Enhanced JavaScript functionality with always-show payment slip button for paid orders
@@ -884,6 +919,713 @@ function printOrder(orderId) {
     // printWindow.onload = function() {
     //     printWindow.print();
     // };
+}
+
+/**
+ * BULK DISPATCH FUNCTIONALITY
+ */
+
+// Global variables for bulk dispatch
+let selectedOrdersForBulkDispatch = [];
+
+/**
+ * Toggle Select All Checkbox
+ */
+function toggleSelectAll() {
+    const selectAllCheckbox = document.getElementById('selectAll');
+    const orderCheckboxes = document.querySelectorAll('.order-checkbox');
+    
+    orderCheckboxes.forEach(checkbox => {
+        checkbox.checked = selectAllCheckbox.checked;
+    });
+    
+    updateBulkSelection();
+}
+
+/**
+ * Update Bulk Selection Display
+ */
+function updateBulkSelection() {
+    const orderCheckboxes = document.querySelectorAll('.order-checkbox:checked');
+    const selectedCount = orderCheckboxes.length;
+    const bulkActionsBar = document.getElementById('bulkActionsBar');
+    const selectedCountElement = document.getElementById('selectedCount');
+    const selectAllCheckbox = document.getElementById('selectAll');
+    
+    // Update selected count
+    if (selectedCountElement) {
+        selectedCountElement.textContent = selectedCount;
+    }
+    
+    // Show/hide bulk actions bar
+    if (bulkActionsBar) {
+        bulkActionsBar.style.display = selectedCount > 0 ? 'flex' : 'none';
+    }
+    
+    // Update select all checkbox state
+    const totalCheckboxes = document.querySelectorAll('.order-checkbox').length;
+    if (selectAllCheckbox) {
+        selectAllCheckbox.checked = selectedCount === totalCheckboxes && totalCheckboxes > 0;
+        selectAllCheckbox.indeterminate = selectedCount > 0 && selectedCount < totalCheckboxes;
+    }
+    
+    // Store selected orders for bulk dispatch
+    selectedOrdersForBulkDispatch = Array.from(orderCheckboxes).map(checkbox => checkbox.value);
+    
+     // Toggle action buttons based on selection state
+    toggleActionButtons();
+}
+
+/**
+ * Toggle Action Buttons Based on Bulk Selection State
+ */
+function toggleActionButtons() {
+    const selectedOrdersCount = document.querySelectorAll('.order-checkbox:checked').length;
+    const allActionButtons = document.querySelectorAll('.action-buttons-group');
+    
+    if (selectedOrdersCount > 0) {
+        // Disable all action buttons when bulk selection is active
+        allActionButtons.forEach(buttonGroup => {
+            buttonGroup.style.opacity = '0.5';
+            buttonGroup.style.pointerEvents = 'none';
+            buttonGroup.style.cursor = 'not-allowed';
+        });
+    } else {
+        // Re-enable all action buttons when no bulk selection
+        allActionButtons.forEach(buttonGroup => {
+            buttonGroup.style.opacity = '1';
+            buttonGroup.style.pointerEvents = 'auto';
+            buttonGroup.style.cursor = 'default';
+        });
+    }
+}
+
+/**
+ * Clear Bulk Selection
+ */
+function clearBulkSelection() {
+    const orderCheckboxes = document.querySelectorAll('.order-checkbox');
+    const selectAllCheckbox = document.getElementById('selectAll');
+    
+    orderCheckboxes.forEach(checkbox => {
+        checkbox.checked = false;
+    });
+    
+    if (selectAllCheckbox) {
+        selectAllCheckbox.checked = false;
+        selectAllCheckbox.indeterminate = false;
+    }
+    
+    updateBulkSelection();
+}
+
+/**
+ * Close Bulk Dispatch Modal
+ */
+function closeBulkDispatchModal() {
+    const modal = document.getElementById('bulkDispatchModal');
+    if (modal) {
+        modal.style.display = 'none';
+        document.body.style.overflow = 'auto';
+    }
+}
+
+
+/**
+ * Fetch Tracking Numbers for Bulk Dispatch
+ */
+function fetchBulkTrackingNumbers(courierId) {
+    const trackingDisplay = document.getElementById('bulk_tracking_numbers_display');
+    const submitBtn = document.getElementById('bulk-dispatch-submit-btn');
+    const selectedCount = selectedOrdersForBulkDispatch.length;
+    
+    if (!courierId) {
+        trackingDisplay.innerHTML = '<span class="text-muted">Select a courier to see available tracking numbers</span>';
+        submitBtn.disabled = true;
+        return;
+    }
+    
+    // Show loading state
+    trackingDisplay.innerHTML = '<span class="text-info"><i class="fas fa-spinner fa-spin me-1"></i>Loading tracking numbers...</span>';
+    submitBtn.disabled = true;
+    
+    // Fetch tracking numbers from PHP endpoint
+    fetch(`get_bulk_tracking_numbers.php?courier_id=${courierId}&count=${selectedCount}`, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.status === 'success') {
+            let trackingHtml = `<span class="text-success"><i class="fas fa-check-circle me-1"></i>Available tracking numbers: <strong>${data.tracking_numbers.length}</strong></span>`;
+            
+            if (data.tracking_numbers.length >= selectedCount) {
+                trackingHtml += `<div class="tracking-numbers-preview mt-2">`;
+                data.tracking_numbers.slice(0, selectedCount).forEach((trackingNumber, index) => {
+                    trackingHtml += `<div class="tracking-item">${index + 1}. ${trackingNumber}</div>`;
+                });
+                trackingHtml += `</div>`;
+                trackingHtml += `<small class="d-block text-muted mt-1">${data.available_count} total tracking numbers available</small>`;
+                submitBtn.disabled = false;
+            } else {
+                trackingHtml += `<div class="alert alert-warning mt-2">Only ${data.tracking_numbers.length} tracking numbers available, but ${selectedCount} orders selected.</div>`;
+                submitBtn.disabled = true;
+            }
+            
+            trackingDisplay.innerHTML = trackingHtml;
+        } else {
+            trackingDisplay.innerHTML = 
+                `<span class="text-danger"><i class="fas fa-exclamation-circle me-1"></i>${data.message}</span>`;
+            submitBtn.disabled = true;
+        }
+    })
+    .catch(error => {
+        console.error('Error fetching tracking numbers:', error);
+        trackingDisplay.innerHTML = 
+            '<span class="text-danger"><i class="fas fa-exclamation-triangle me-1"></i>Error loading tracking numbers. Please try again.</span>';
+        submitBtn.disabled = true;
+    });
+}
+
+/**
+ * Initialize Bulk Dispatch Functionality
+ */
+document.addEventListener('DOMContentLoaded', function() {
+    const bulkCarrierSelect = document.getElementById('bulk_carrier');
+    const bulkDispatchForm = document.getElementById('bulk-dispatch-form');
+    const bulkModal = document.getElementById('bulkDispatchModal');
+    
+    // Handle bulk courier selection change
+    if (bulkCarrierSelect) {
+        bulkCarrierSelect.addEventListener('change', function() {
+            const selectedCourierId = this.value;
+            
+            if (selectedCourierId) {
+                // Fetch tracking numbers for selected courier
+                fetchBulkTrackingNumbers(selectedCourierId);
+            } else {
+                // Reset display when no courier is selected
+                document.getElementById('bulk_tracking_numbers_display').innerHTML = 
+                    '<span class="text-muted">Select a courier to see available tracking numbers</span>';
+                document.getElementById('bulk-dispatch-submit-btn').disabled = true;
+            }
+        });
+    }
+    
+    // Handle bulk dispatch form submission
+    if (bulkDispatchForm) {
+        bulkDispatchForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const carrier = document.getElementById('bulk_carrier').value;
+            const dispatchNotes = document.getElementById('bulk_dispatch_notes').value;
+            const submitBtn = document.getElementById('bulk-dispatch-submit-btn');
+            
+            if (!carrier) {
+                alert('Please select a courier service before dispatching');
+                return;
+            }
+            
+            if (selectedOrdersForBulkDispatch.length === 0) {
+                alert('No orders selected for dispatch');
+                return;
+            }
+            
+            // Confirm bulk dispatch
+            if (!confirm(`Are you sure you want to dispatch ${selectedOrdersForBulkDispatch.length} orders? This action cannot be undone.`)) {
+                return;
+            }
+            
+            // Show loading state
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Dispatching...';
+            submitBtn.disabled = true;
+            
+            // Create FormData object
+            const formData = new FormData();
+            formData.append('order_ids', JSON.stringify(selectedOrdersForBulkDispatch));
+            formData.append('carrier', carrier);
+            formData.append('dispatch_notes', dispatchNotes);
+            formData.append('action', 'bulk_dispatch_orders');
+            
+            // Send the request
+            fetch('process_bulk_dispatch.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    alert(`Successfully dispatched ${data.dispatched_count} orders!` + 
+                          (data.tracking_numbers ? ' Tracking numbers assigned.' : ''));
+                    closeBulkDispatchModal();
+                    clearBulkSelection();
+                    // Reload the page to reflect changes
+                    window.location.reload();
+                } else {
+                    alert('Error: ' + (data.message || 'Failed to dispatch orders'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while dispatching orders. Please try again.');
+            })
+            .finally(() => {
+                // Reset button state
+                submitBtn.innerHTML = '<i class="fas fa-truck me-1"></i>Confirm Bulk Dispatch';
+                submitBtn.disabled = !carrier;
+            });
+        });
+    }
+    
+    // Close modal when clicking outside
+    if (bulkModal) {
+        bulkModal.addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeBulkDispatchModal();
+            }
+        });
+    }
+    
+    // Close modal with Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            const modal = document.getElementById('bulkDispatchModal');
+            if (modal && modal.style.display === 'flex') {
+                closeBulkDispatchModal();
+            }
+        }
+    });
+
+    // --- API DISPATCH ---
+     const apiCarrierSelect = document.getElementById('api_carrier');
+    const apiDispatchForm = document.getElementById('api-dispatch-form');
+    const apiModal = document.getElementById('apiDispatchModal');
+    const dispatchTypeRadios = document.querySelectorAll('input[name="api_dispatch_type"]');
+    const newParcelOption = document.getElementById('newParcel').closest('.form-check');
+    const existingParcelOption = document.getElementById('existingParcel').closest('.form-check');
+    const dispatchTypeContainer = document.querySelector('.dispatch-type-options');
+    
+    // Store courier API capabilities - populated from PHP data
+    const courierCapabilities = {
+        <?php
+        // Fetch all courier capabilities and create JavaScript object
+        $capabilities_query = "SELECT courier_id, has_api_new, has_api_existing FROM couriers WHERE status = 'active'";
+        $capabilities_result = $conn->query($capabilities_query);
+        
+        if ($capabilities_result && $capabilities_result->num_rows > 0) {
+            $capabilities_array = [];
+            while($cap = $capabilities_result->fetch_assoc()) {
+                $capabilities_array[] = $cap['courier_id'] . ': {has_api_new: ' . intval($cap['has_api_new']) . ', has_api_existing: ' . intval($cap['has_api_existing']) . '}';
+            }
+            echo implode(',', $capabilities_array);
+        }
+        ?>
+    };
+    
+    /**
+     * Get courier capabilities from embedded data
+     */
+    function getCourierCapabilities(courierId) {
+        if (!courierId) {
+            // Hide dispatch type section if no courier selected
+            dispatchTypeContainer.style.display = 'none';
+            document.getElementById('api-dispatch-submit-btn').disabled = true;
+            return;
+        }
+        
+        const capabilities = courierCapabilities[courierId];
+        if (capabilities) {
+            updateDispatchTypeOptions(capabilities);
+        } else {
+            // Courier not found, hide dispatch type section
+            dispatchTypeContainer.style.display = 'none';
+            document.getElementById('api-dispatch-submit-btn').disabled = true;
+        }
+    }
+    
+    /**
+     * Update dispatch type options based on courier capabilities
+     */
+    function updateDispatchTypeOptions(capabilities) {
+        // FORCE ONLY "NEW PARCEL" OPTION AS REQUESTED
+        const hasNew = true; 
+        const hasExisting = false; 
+        
+        // Show/hide options based on capabilities
+        newParcelOption.style.display = 'block';
+        existingParcelOption.style.display = 'none';
+        
+        // Show the dispatch type section
+        dispatchTypeContainer.style.display = 'block';
+        
+        // Always select 'new'
+        document.getElementById('newParcel').checked = true;
+        document.getElementById('existingTrackingSection').style.display = 'none';
+        
+        // Enable submit button since we have valid options
+        updateSubmitButtonState();
+    }
+    
+    /**
+     * Update submit button state based on selections
+     */
+    function updateSubmitButtonState() {
+        const submitBtn = document.getElementById('api-dispatch-submit-btn');
+        const selectedOrders = document.querySelectorAll('.order-checkbox:checked').length;
+        const courierSelected = apiCarrierSelect.value;
+        const dispatchTypeSelected = document.querySelector('input[name="api_dispatch_type"]:checked');
+        
+        // Enable button only if we have courier, orders, and valid dispatch type
+        const canSubmit = courierSelected && selectedOrders > 0 && dispatchTypeSelected;
+        submitBtn.disabled = !canSubmit;
+    }
+    
+    // Handle courier selection change
+    if (apiCarrierSelect) {
+        apiCarrierSelect.addEventListener('change', function() {
+            const selectedCourierId = this.value;
+            
+            if (selectedCourierId) {
+                // Get courier capabilities and update UI
+                getCourierCapabilities(selectedCourierId);
+            } else {
+                // No courier selected, hide dispatch options
+                dispatchTypeContainer.style.display = 'none';
+                document.getElementById('existingTrackingSection').style.display = 'none';
+                document.getElementById('api-dispatch-submit-btn').disabled = true;
+            }
+        });
+    }
+    
+    // Handle dispatch type change
+    dispatchTypeRadios.forEach(radio => {
+        radio.addEventListener('change', function() {
+            if (this.value === 'existing') {
+                document.getElementById('existingTrackingSection').style.display = 'block';
+                // Fetch tracking numbers if courier is selected
+                if (apiCarrierSelect.value) {
+                    fetchApiTrackingNumbers(apiCarrierSelect.value);
+                }
+            } else {
+                document.getElementById('existingTrackingSection').style.display = 'none';
+                updateSubmitButtonState();
+            }
+        });
+    });
+    
+    // Handle API dispatch form submission
+    if (apiDispatchForm) {
+        apiDispatchForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const carrier = apiCarrierSelect.value;
+            const dispatchTypeElement = document.querySelector('input[name="api_dispatch_type"]:checked');
+            const dispatchType = dispatchTypeElement ? dispatchTypeElement.value : null;
+            const dispatchNotes = document.getElementById('api_dispatch_notes').value;
+            const submitBtn = document.getElementById('api-dispatch-submit-btn');
+            const selectedOrders = Array.from(document.querySelectorAll('.order-checkbox:checked')).map(cb => cb.value);
+            
+            // Validation
+            if (!carrier) {
+                alert('Please select an API courier service');
+                return;
+            }
+            
+            if (!dispatchType) {
+                alert('Please select a dispatch type');
+                return;
+            }
+            
+            if (selectedOrders.length === 0) {
+                alert('No orders selected for dispatch');
+                return;
+            }
+            
+            // Additional validation for existing parcels
+            if (dispatchType === 'existing') {
+                const trackingDisplay = document.getElementById('api_tracking_numbers_display');
+                if (trackingDisplay.textContent.includes('No tracking numbers available') || 
+                    trackingDisplay.textContent.includes('Select a courier')) {
+                    alert('Please ensure you have enough tracking numbers available');
+                    return;
+                }
+            }
+            
+            // Confirm action
+            const actionText = dispatchType === 'new' ? 'create new API parcels' : 'assign existing tracking numbers';
+            if (!confirm(`Are you sure you want to ${actionText} for ${selectedOrders.length} orders?`)) {
+                return;
+            }
+            
+            // Show loading state
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processing...';
+            submitBtn.disabled = true;
+            
+            // Create FormData object
+            const formData = new FormData();
+            formData.append('order_ids', JSON.stringify(selectedOrders));
+            formData.append('carrier_id', carrier);
+            formData.append('dispatch_type', dispatchType);
+            formData.append('dispatch_notes', dispatchNotes);
+            formData.append('action', 'api_dispatch_orders');
+            
+            // Determine which endpoint to use
+            let endpoint = 'new.php';
+
+            
+            console.log('Submitting to endpoint:', endpoint);
+            
+            if (!endpoint) {
+                alert('Invalid configuration: No endpoint found for this courier.');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-paper-plane me-1"></i>Confirm API Dispatch';
+                return;
+            }
+            
+            // Send the request
+            fetch(endpoint, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Response data:', data);
+                if (data.success) {
+                    alert(`Successfully processed ${data.processed_count || selectedOrders.length} orders via API!`);
+                    closeApiDispatchModal();
+                    clearBulkSelection();
+                    // Reload the page to reflect changes
+                    window.location.reload();
+                } else {
+                    alert('Error: ' + (data.message || 'Failed to process orders via API'));
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i class="fas fa-paper-plane me-1"></i>Confirm API Dispatch';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while processing orders via API. Please try again.');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-paper-plane me-1"></i>Confirm API Dispatch';
+            });
+        });
+    }
+     // Close modal when clicking outside
+    if (apiModal) {
+        apiModal.addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeApiDispatchModal();
+            }
+        });
+    }
+    
+    // Close modal with Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            const modal = document.getElementById('apiDispatchModal');
+            if (modal && modal.style.display === 'flex') {
+                 closeApiDispatchModal();
+            }
+        }
+    });
+
+});
+
+/**
+ * Open API Dispatch Modal
+ */
+function openApiDispatchModal() {
+    const selectedOrders = document.querySelectorAll('.order-checkbox:checked');
+    
+    if (selectedOrders.length === 0) {
+        alert('Please select at least one order to dispatch via API.');
+        return;
+    }
+    
+    console.log('Opening API dispatch modal for', selectedOrders.length, 'orders');
+    
+    // Update selected orders list in modal
+    updateApiSelectedOrdersList();
+    
+    // Reset form
+    document.getElementById('api-dispatch-form').reset();
+    document.getElementById('api_tracking_numbers_display').innerHTML = 
+        '<span class="text-muted">Select a courier to see available tracking numbers</span>';
+    document.getElementById('api-dispatch-submit-btn').disabled = true;
+    document.getElementById('existingTrackingSection').style.display = 'none';
+    
+    // Show modal
+    const modal = document.getElementById('apiDispatchModal');
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+}
+
+/**
+ * Close API Dispatch Modal
+ */
+function closeApiDispatchModal() {
+    const modal = document.getElementById('apiDispatchModal');
+    modal.style.display = 'none';
+    document.body.style.overflow = 'auto';
+    
+    // Reset form
+    document.getElementById('api-dispatch-form').reset();
+    document.getElementById('api_tracking_numbers_display').innerHTML = 
+        '<span class="text-muted">Select a courier to see available tracking numbers</span>';
+    document.getElementById('api-dispatch-submit-btn').disabled = true;
+    document.getElementById('existingTrackingSection').style.display = 'none';
+}
+
+/**
+ * Update Selected Orders List in API Modal
+ */
+function updateApiSelectedOrdersList() {
+    const selectedOrders = document.querySelectorAll('.order-checkbox:checked');
+    const selectedOrdersList = document.getElementById('apiSelectedOrdersList');
+    const apiSelectedCount = document.getElementById('apiSelectedCount');
+    
+    if (apiSelectedCount) {
+        apiSelectedCount.textContent = selectedOrders.length;
+    }
+    
+    if (selectedOrdersList) {
+        let ordersHtml = '<div class="selected-orders-list">';
+        
+        selectedOrders.forEach((checkbox, index) => {
+            const orderId = checkbox.value;
+            const row = checkbox.closest('tr');
+            const customerName = row.querySelector('.customer-name').textContent.trim();
+            
+            ordersHtml += `
+                <div class="selected-order-item">
+                    <span class="order-number">${index + 1}.</span>
+                    <span class="order-id">${orderId}</span>
+                    <span class="customer-name">${customerName}</span>
+                </div>
+            `;
+        });
+        
+        ordersHtml += '</div>';
+        selectedOrdersList.innerHTML = ordersHtml;
+    }
+}
+
+/**
+ * Fetch Tracking Numbers for API Dispatch (existing parcels)
+ */
+function fetchApiTrackingNumbers(courierId) {
+    const trackingDisplay = document.getElementById('api_tracking_numbers_display');
+    const submitBtn = document.getElementById('api-dispatch-submit-btn');
+    const selectedCount = document.querySelectorAll('.order-checkbox:checked').length;
+    
+    console.log('Fetching tracking numbers for courier:', courierId, 'Count:', selectedCount);
+    
+    if (!courierId) {
+        trackingDisplay.innerHTML = '<span class="text-muted">Select a courier to see available tracking numbers</span>';
+        submitBtn.disabled = true;
+        return;
+    }
+    
+    if (selectedCount === 0) {
+        trackingDisplay.innerHTML = '<span class="text-warning"><i class="fas fa-exclamation-triangle me-1"></i>No orders selected</span>';
+        submitBtn.disabled = true;
+        return;
+    }
+    
+    // Show loading state
+    trackingDisplay.innerHTML = '<span class="text-info"><i class="fas fa-spinner fa-spin me-1"></i>Loading tracking numbers...</span>';
+    submitBtn.disabled = true;
+    
+    // Fetch tracking numbers from PHP endpoint
+    fetch(`get_api_tracking_numbers.php?courier_id=${courierId}&count=${selectedCount}`, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => {
+        console.log('Response status:', response.status);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('API Response:', data);
+        
+        if (data.status === 'success') {
+            let trackingHtml = '';
+            
+            if (data.tracking_numbers.length >= selectedCount) {
+                trackingHtml = `<span class="text-success"><i class="fas fa-check-circle me-1"></i>Available tracking numbers: <strong>${data.tracking_numbers.length}</strong></span>`;
+                
+                trackingHtml += `<div class="tracking-numbers-preview mt-2" style="max-height: 200px; overflow-y: auto; background: #f8f9fa; padding: 10px; border-radius: 4px;">`;
+                data.tracking_numbers.slice(0, selectedCount).forEach((trackingNumber, index) => {
+                    trackingHtml += `<div class="tracking-item" style="padding: 2px 0; font-family: monospace;">${index + 1}. <strong>${trackingNumber}</strong></div>`;
+                });
+                trackingHtml += `</div>`;
+                
+                if (data.available_count > selectedCount) {
+                    trackingHtml += `<small class="d-block text-muted mt-1">${data.available_count} total tracking numbers available</small>`;
+                }
+                
+                submitBtn.disabled = false;
+            } else {
+                trackingHtml = `<div class="alert alert-warning mt-2">
+                    <i class="fas fa-exclamation-triangle me-1"></i>
+                    <strong>Insufficient tracking numbers!</strong><br>
+                    Only <strong>${data.tracking_numbers.length}</strong> tracking numbers available, 
+                    but <strong>${selectedCount}</strong> orders selected.
+                </div>`;
+                
+                if (data.tracking_numbers.length > 0) {
+                    trackingHtml += `<div class="tracking-numbers-preview mt-2" style="max-height: 150px; overflow-y: auto; background: #fff3cd; padding: 10px; border-radius: 4px;">`;
+                    trackingHtml += `<small class="text-muted">Available tracking numbers:</small>`;
+                    data.tracking_numbers.forEach((trackingNumber, index) => {
+                        trackingHtml += `<div class="tracking-item" style="padding: 2px 0; font-family: monospace;">${index + 1}. <strong>${trackingNumber}</strong></div>`;
+                    });
+                    trackingHtml += `</div>`;
+                }
+                
+                submitBtn.disabled = true;
+            }
+            
+            trackingDisplay.innerHTML = trackingHtml;
+        } else {
+            trackingDisplay.innerHTML = 
+                `<div class="alert alert-danger">
+                    <i class="fas fa-exclamation-circle me-1"></i>
+                    <strong>Error:</strong> ${data.message}
+                </div>`;
+            submitBtn.disabled = true;
+        }
+    })
+    .catch(error => {
+        console.error('Error fetching tracking numbers:', error);
+        trackingDisplay.innerHTML = 
+            `<div class="alert alert-danger">
+                <i class="fas fa-exclamation-triangle me-1"></i>
+                <strong>Network Error:</strong> Could not load tracking numbers. Please check your connection and try again.
+            </div>`;
+        submitBtn.disabled = true;
+    });
 }
 </script>
     <!-- Include Footer and Scripts -->
